@@ -1,6 +1,10 @@
 # Gascountry - AI Agent Launcher
 
+[![GitHub](https://img.shields.io/badge/GitHub-Source%20Code-blue?logo=github)](https://github.com/pRizz/gascountry)
+
 A developer-focused UI for spawning and managing AI agent groups that interact with GitHub repositories.
+
+**Source Code:** [https://github.com/pRizz/gascountry](https://github.com/pRizz/gascountry)
 
 ## Features
 
