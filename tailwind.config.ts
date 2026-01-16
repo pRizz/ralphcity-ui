@@ -57,6 +57,18 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        diff: {
+          add: "hsl(var(--diff-add))",
+          remove: "hsl(var(--diff-remove))",
+        },
+        agent: {
+          running: "hsl(var(--agent-running))",
+          pending: "hsl(var(--agent-pending))",
+          error: "hsl(var(--agent-error))",
+        },
+      },
+      fontFamily: {
+        mono: ["JetBrains Mono", "Fira Code", "monospace"],
       },
       borderRadius: {
         lg: "var(--radius)",
