@@ -1,12 +1,53 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState } from "react";
+import { AgentSidebar } from "@/components/gastown/AgentSidebar";
+import { MainPanel } from "@/components/gastown/MainPanel";
+import { mockGastownInstances } from "@/data/mockData";
+import { GastownInstance, Repository } from "@/types/gastown";
+import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
+  const [instances, setInstances] = useState<GastownInstance[]>(mockGastownInstances);
+  const [activeInstanceId, setActiveInstanceId] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  const handleNewGastown = () => {
+    setActiveInstanceId(null);
+  };
+
+  const handleSpawnGastown = (
+    prompt: string,
+    repo: Repository,
+    branch: string,
+    model: string
+  ) => {
+    const newInstance: GastownInstance = {
+      id: crypto.randomUUID(),
+      title: prompt.length > 30 ? prompt.slice(0, 30) + "..." : prompt,
+      repo: repo.name,
+      branch,
+      status: "running",
+      createdAt: new Date(),
+      model,
+    };
+
+    setInstances((prev) => [newInstance, ...prev]);
+    setActiveInstanceId(newInstance.id);
+
+    toast({
+      title: "Gastown spawned",
+      description: `Running "${newInstance.title}" on ${repo.fullName}`,
+    });
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
+    <div className="flex min-h-screen w-full">
+      <AgentSidebar
+        instances={instances}
+        activeInstanceId={activeInstanceId}
+        onSelectInstance={setActiveInstanceId}
+        onNewGastown={handleNewGastown}
+      />
+      <MainPanel onSpawnGastown={handleSpawnGastown} />
     </div>
   );
 };
