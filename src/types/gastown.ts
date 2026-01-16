@@ -1,5 +1,12 @@
 export type AgentStatus = "running" | "completed" | "error" | "pending";
 
+export interface ChatMessage {
+  id: string;
+  role: "user" | "agent";
+  content: string;
+  timestamp: Date;
+}
+
 export interface GastownInstance {
   id: string;
   title: string;
@@ -10,6 +17,7 @@ export interface GastownInstance {
   linesAdded?: number;
   linesRemoved?: number;
   model: string;
+  messages: ChatMessage[];
 }
 
 export interface Repository {
