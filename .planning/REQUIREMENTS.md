@@ -23,10 +23,10 @@
 
 ### Errors
 
-- [ ] **ERR-01**: User sees helpful message explaining SSH auth failure and fix steps
-- [ ] **ERR-02**: User sees helpful message explaining HTTPS auth failure and fix steps
-- [ ] **ERR-03**: User sees helpful message when ralph CLI not found in PATH
-- [ ] **ERR-04**: User sees helpful message when repo path no longer exists
+- [x] **ERR-01**: User sees helpful message explaining SSH auth failure and fix steps
+- [x] **ERR-02**: User sees helpful message explaining HTTPS auth failure and fix steps
+- [x] **ERR-03**: User sees helpful message when ralph CLI not found in PATH
+- [x] **ERR-04**: User sees helpful message when repo path no longer exists
 
 ### Cleanup
 
@@ -68,10 +68,10 @@
 | AUTH-03 | Phase 5 | Pending |
 | AUTH-04 | Phase 5 | Pending |
 | AUTH-05 | Phase 5 | Pending |
-| ERR-01 | Phase 4 | Pending |
-| ERR-02 | Phase 4 | Pending |
-| ERR-03 | Phase 4 | Pending |
-| ERR-04 | Phase 4 | Pending |
+| ERR-01 | Phase 4 | Complete |
+| ERR-02 | Phase 4 | Complete |
+| ERR-03 | Phase 4 | Complete |
+| ERR-04 | Phase 4 | Complete |
 | CLEAN-01 | Phase 1 | Complete |
 | CLEAN-02 | Phase 1 | Complete |
 
@@ -82,4 +82,4 @@
 
 ---
 *Requirements defined: 2026-01-17*
-*Last updated: 2026-01-17 after Phase 3 completion*
+*Last updated: 2026-01-17 after Phase 4 completion*
