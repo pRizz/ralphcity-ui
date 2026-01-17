@@ -9,12 +9,14 @@ See: .planning/PROJECT.md (updated 2026-01-17)
 
 ## Current Position
 
-Phase: 5 of 5 (Authentication)
-Plan: 2 of 2 in current phase
-Status: Phase complete
-Last activity: 2026-01-17 - Completed 05-02-PLAN.md (Credential Input UI)
+Phase: 6 of 7 (Repository Manager)
+Plan: 0 of ? in current phase
+Status: Not started
+Last activity: 2026-01-17 - Phase 7 added to roadmap
 
-Progress: [##########] 100%
+Progress: [########--] 80%
+
+**Next Phase:** Phase 6 - Repository Manager (CRUD interface for repos)
 
 ## Performance Metrics
 
@@ -60,6 +62,11 @@ Recent decisions affecting current work:
 | 2026-01-17 | CloneEvent enum with tagged JSON variants | Frontend can easily parse event types | API/Frontend |
 | 2026-01-17 | POST with ReadableStream for credential retry | EventSource only supports GET; POST needed for credentials | Frontend auth |
 | 2026-01-17 | Inline trust text + collapsible detail | Balance visibility with information density | Frontend UX |
+
+### Roadmap Evolution
+
+- Phase 6 added: Repository Manager - CRUD interface for viewing, cloning, and deleting repos
+- Phase 7 added: Agent Orchestrator Selection - Per-session orchestrator selection (Ralph, GSD, Gastown)
 
 ### Pending Todos
 

@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { AgentListItem } from "./AgentListItem";
 import { SettingsDialog } from "./SettingsDialog";
+import { RepositoryManagerDialog } from "./RepositoryManagerDialog";
 import { RalphtownInstance } from "@/types/ralphtown";
 
 interface AgentSidebarProps {
@@ -164,7 +165,10 @@ export function AgentSidebar({
           <Github className="h-4 w-4" />
           <span>ralphtown source code</span>
         </a>
-        <SettingsDialog />
+        <div className="flex items-center gap-1">
+          <RepositoryManagerDialog />
+          <SettingsDialog />
+        </div>
       </div>
     </aside>
   );
