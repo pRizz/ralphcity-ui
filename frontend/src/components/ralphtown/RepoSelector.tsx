@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown, Plus } from "lucide-react";
+import { ChevronDown, Plus, GitBranch } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -22,6 +22,8 @@ import { useAddRepo } from "@/api/hooks";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { Repository, mapApiRepoToRepository } from "@/types/ralphtown";
+import { CloneDialog } from "./CloneDialog";
+import type { Repo } from "@/api/types";
 
 interface RepoSelectorProps {
   repositories: Repository[];
@@ -39,10 +41,15 @@ export function RepoSelector({
   onSelectBranch,
 }: RepoSelectorProps) {
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [isCloneOpen, setIsCloneOpen] = useState(false);
   const [isDragActive, setIsDragActive] = useState(false);
   const [customPath, setCustomPath] = useState("");
   const addRepo = useAddRepo();
   const { toast } = useToast();
+
+  const handleCloneSuccess = (repo: Repo) => {
+    onSelectRepo(mapApiRepoToRepository(repo));
+  };
 
   const handleAddRepo = async () => {
     const trimmedPath = customPath.trim();
@@ -142,6 +149,16 @@ export function RepoSelector({
               <Plus className="mr-2 h-3.5 w-3.5" />
               Add local path...
             </DropdownMenuItem>
+            <DropdownMenuItem
+              onSelect={(event) => {
+                event.preventDefault();
+                setIsCloneOpen(true);
+              }}
+              className="cursor-pointer text-foreground"
+            >
+              <GitBranch className="mr-2 h-3.5 w-3.5" />
+              Clone from URL...
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 
@@ -196,6 +213,12 @@ export function RepoSelector({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <CloneDialog
+        open={isCloneOpen}
+        onOpenChange={setIsCloneOpen}
+        onCloneSuccess={handleCloneSuccess}
+      />
 
       {selectedRepo && (
         <DropdownMenu>
