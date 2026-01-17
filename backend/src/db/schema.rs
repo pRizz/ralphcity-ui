@@ -8,7 +8,12 @@
 /// - config: Key-value configuration storage
 
 /// Schema version for migrations
-pub const SCHEMA_VERSION: i32 = 1;
+pub const SCHEMA_VERSION: i32 = 2;
+
+/// Migration from v1 to v2: Add orchestrator column to sessions
+pub const MIGRATE_V1_TO_V2: &str = r#"
+ALTER TABLE sessions ADD COLUMN orchestrator TEXT NOT NULL DEFAULT 'ralph';
+"#;
 
 /// SQL to create all tables
 pub const CREATE_TABLES: &str = r#"
@@ -26,6 +31,7 @@ CREATE TABLE IF NOT EXISTS sessions (
     id TEXT PRIMARY KEY,
     repo_id TEXT NOT NULL,
     name TEXT,
+    orchestrator TEXT NOT NULL DEFAULT 'ralph',
     status TEXT NOT NULL DEFAULT 'idle',
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,

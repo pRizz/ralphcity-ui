@@ -9,8 +9,8 @@ use rusqlite::{params, Connection};
 use thiserror::Error;
 use uuid::Uuid;
 
-use models::{Message, MessageRole, OutputStream, OutputLog, Repo, Session, SessionStatus};
-use schema::{CREATE_TABLES, GET_SCHEMA_VERSION, SCHEMA_VERSION, UPSERT_SCHEMA_VERSION};
+use models::{Message, MessageRole, Orchestrator, OutputStream, OutputLog, Repo, Session, SessionStatus};
+use schema::{CREATE_TABLES, GET_SCHEMA_VERSION, MIGRATE_V1_TO_V2, SCHEMA_VERSION, UPSERT_SCHEMA_VERSION};
 
 /// Database error types
 #[derive(Debug, Error)]
@@ -155,7 +155,26 @@ impl Database {
             .query_row(GET_SCHEMA_VERSION, [], |row| row.get(0))
             .ok();
 
-        if current_version.unwrap_or(0) < SCHEMA_VERSION {
+        let version = current_version.unwrap_or(0);
+
+        // Run migrations
+        if version < 2 {
+            // V1 to V2: Add orchestrator column to sessions
+            // Only run if table exists and column doesn't exist
+            let has_orchestrator: bool = conn
+                .query_row(
+                    "SELECT COUNT(*) FROM pragma_table_info('sessions') WHERE name = 'orchestrator'",
+                    [],
+                    |row| row.get::<_, i32>(0).map(|c| c > 0),
+                )
+                .unwrap_or(false);
+
+            if !has_orchestrator {
+                conn.execute_batch(MIGRATE_V1_TO_V2)?;
+            }
+        }
+
+        if version < SCHEMA_VERSION {
             conn.execute(UPSERT_SCHEMA_VERSION, params![SCHEMA_VERSION])?;
         }
 
@@ -271,17 +290,18 @@ impl Database {
     // ==================== Session Operations ====================
 
     /// Insert a new session
-    pub fn insert_session(&self, repo_id: Uuid, name: Option<&str>) -> DbResult<Session> {
+    pub fn insert_session(&self, repo_id: Uuid, name: Option<&str>, orchestrator: Orchestrator) -> DbResult<Session> {
         let conn = self.conn.lock().unwrap();
         let now = Utc::now();
         let id = Uuid::new_v4();
 
         conn.execute(
-            "INSERT INTO sessions (id, repo_id, name, status, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            "INSERT INTO sessions (id, repo_id, name, orchestrator, status, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
             params![
                 id.to_string(),
                 repo_id.to_string(),
                 name,
+                orchestrator.as_str(),
                 SessionStatus::Idle.as_str(),
                 now.to_rfc3339(),
                 now.to_rfc3339()
@@ -292,6 +312,7 @@ impl Database {
             id,
             repo_id,
             name: name.map(String::from),
+            orchestrator,
             status: SessionStatus::Idle,
             created_at: now,
             updated_at: now,
@@ -303,16 +324,17 @@ impl Database {
         let conn = self.conn.lock().unwrap();
 
         conn.query_row(
-            "SELECT id, repo_id, name, status, created_at, updated_at FROM sessions WHERE id = ?1",
+            "SELECT id, repo_id, name, orchestrator, status, created_at, updated_at FROM sessions WHERE id = ?1",
             params![id.to_string()],
             |row| {
                 Ok(Session {
                     id: parse_uuid(row, 0, "id")?,
                     repo_id: parse_uuid(row, 1, "repo_id")?,
                     name: row.get(2)?,
-                    status: parse_enum(row, 3, "status", SessionStatus::from_str)?,
-                    created_at: parse_datetime(row, 4, "created_at")?,
-                    updated_at: parse_datetime(row, 5, "updated_at")?,
+                    orchestrator: parse_enum(row, 3, "orchestrator", Orchestrator::from_str)?,
+                    status: parse_enum(row, 4, "status", SessionStatus::from_str)?,
+                    created_at: parse_datetime(row, 5, "created_at")?,
+                    updated_at: parse_datetime(row, 6, "updated_at")?,
                 })
             },
         )
@@ -326,7 +348,7 @@ impl Database {
     pub fn list_sessions(&self) -> DbResult<Vec<Session>> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare(
-            "SELECT id, repo_id, name, status, created_at, updated_at FROM sessions ORDER BY updated_at DESC",
+            "SELECT id, repo_id, name, orchestrator, status, created_at, updated_at FROM sessions ORDER BY updated_at DESC",
         )?;
 
         let sessions = stmt
@@ -335,9 +357,10 @@ impl Database {
                     id: parse_uuid(row, 0, "id")?,
                     repo_id: parse_uuid(row, 1, "repo_id")?,
                     name: row.get(2)?,
-                    status: parse_enum(row, 3, "status", SessionStatus::from_str)?,
-                    created_at: parse_datetime(row, 4, "created_at")?,
-                    updated_at: parse_datetime(row, 5, "updated_at")?,
+                    orchestrator: parse_enum(row, 3, "orchestrator", Orchestrator::from_str)?,
+                    status: parse_enum(row, 4, "status", SessionStatus::from_str)?,
+                    created_at: parse_datetime(row, 5, "created_at")?,
+                    updated_at: parse_datetime(row, 6, "updated_at")?,
                 })
             })?
             .collect::<Result<Vec<_>, _>>()?;
@@ -349,7 +372,7 @@ impl Database {
     pub fn list_sessions_by_repo(&self, repo_id: Uuid) -> DbResult<Vec<Session>> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare(
-            "SELECT id, repo_id, name, status, created_at, updated_at FROM sessions WHERE repo_id = ?1 ORDER BY updated_at DESC",
+            "SELECT id, repo_id, name, orchestrator, status, created_at, updated_at FROM sessions WHERE repo_id = ?1 ORDER BY updated_at DESC",
         )?;
 
         let sessions = stmt
@@ -358,9 +381,10 @@ impl Database {
                     id: parse_uuid(row, 0, "id")?,
                     repo_id: parse_uuid(row, 1, "repo_id")?,
                     name: row.get(2)?,
-                    status: parse_enum(row, 3, "status", SessionStatus::from_str)?,
-                    created_at: parse_datetime(row, 4, "created_at")?,
-                    updated_at: parse_datetime(row, 5, "updated_at")?,
+                    orchestrator: parse_enum(row, 3, "orchestrator", Orchestrator::from_str)?,
+                    status: parse_enum(row, 4, "status", SessionStatus::from_str)?,
+                    created_at: parse_datetime(row, 5, "created_at")?,
+                    updated_at: parse_datetime(row, 6, "updated_at")?,
                 })
             })?
             .collect::<Result<Vec<_>, _>>()?;
@@ -673,10 +697,11 @@ mod tests {
 
         // Insert session
         let session = db
-            .insert_session(repo.id, Some("Test Session"))
+            .insert_session(repo.id, Some("Test Session"), Orchestrator::Ralph)
             .expect("Failed to insert session");
         assert_eq!(session.repo_id, repo.id);
         assert_eq!(session.name, Some("Test Session".to_string()));
+        assert_eq!(session.orchestrator, Orchestrator::Ralph);
         assert_eq!(session.status, SessionStatus::Idle);
 
         // Get by ID
@@ -715,7 +740,7 @@ mod tests {
             .insert_repo("/path/to/repo", "my-repo")
             .expect("Failed to insert repo");
         let session = db
-            .insert_session(repo.id, None)
+            .insert_session(repo.id, None, Orchestrator::Ralph)
             .expect("Failed to insert session");
 
         // Insert messages
@@ -774,7 +799,7 @@ mod tests {
             .insert_repo("/path/to/repo", "my-repo")
             .expect("Failed to insert repo");
         let session = db
-            .insert_session(repo.id, None)
+            .insert_session(repo.id, None, Orchestrator::Ralph)
             .expect("Failed to insert session");
         db.insert_message(session.id, MessageRole::User, "Hello!")
             .expect("Failed to insert message");
@@ -796,7 +821,7 @@ mod tests {
             .insert_repo("/path/to/repo", "my-repo")
             .expect("Failed to insert repo");
         let session = db
-            .insert_session(repo.id, None)
+            .insert_session(repo.id, None, Orchestrator::Ralph)
             .expect("Failed to insert session");
 
         // Insert output logs
@@ -870,7 +895,7 @@ mod tests {
             .insert_repo("/path/to/repo", "my-repo")
             .expect("Failed to insert repo");
         let session = db
-            .insert_session(repo.id, None)
+            .insert_session(repo.id, None, Orchestrator::Ralph)
             .expect("Failed to insert session");
         db.insert_output_log(session.id, OutputStream::Stdout, "Test output")
             .expect("Failed to insert output log");
