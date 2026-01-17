@@ -1,6 +1,7 @@
 pub mod config;
 pub mod git;
 pub mod repos;
+pub mod service;
 pub mod sessions;
 
 use std::sync::Arc;

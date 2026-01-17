@@ -27,6 +27,8 @@ git2 = "0.20"
 futures = "0.3"
 nix = { version = "0.29", features = ["signal", "process"] }
 libc = "0.2"
+clap = { version = "4", features = ["derive"] }
+service-manager = "0.10"
 
 [dev-dependencies]
 futures-util = "0.3"

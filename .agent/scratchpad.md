@@ -17,7 +17,7 @@
 - [x] Step 11: Frontend API integration
 - [x] Step 12: Frontend WebSocket integration
 - [x] Step 13: Configuration management
-- [ ] Step 14: Service installation
+- [x] Step 14: Service installation
 - [ ] Step 15: Cargo install packaging
 - [ ] Step 16: Polish and integration testing
 
@@ -485,6 +485,58 @@ GET  /api/sessions/{id}/git/branches → GitBranchesResponse { branches[] }
 
 ### Verification
 - Backend cargo test: ✅ PASS (66 tests)
+- Frontend build: ✅ PASS
+- Frontend tests: ✅ PASS (1 test)
+
+---
+
+## Step 14 - Service Installation - COMPLETED
+
+### Tasks
+- [x] 14.1 Add `service-manager` v0.10 and `clap` v4 dependencies to Cargo.toml
+- [x] 14.2 Create `backend/src/service/mod.rs` - ServiceController struct
+  - install(), uninstall(), start(), stop(), status() methods
+  - Platform detection (launchd/systemd/sc.exe)
+  - User-level services (LaunchAgent, systemd --user)
+- [x] 14.3 Add CLI parsing with clap subcommands
+  - `ralphtown serve` - Start server (default)
+  - `ralphtown install` - Install as system service
+  - `ralphtown uninstall` - Remove system service
+  - `ralphtown start` - Start the service
+  - `ralphtown stop` - Stop the service
+  - `ralphtown status` - Show service status
+- [x] 14.4 Create `backend/src/api/service.rs` - Service REST endpoints
+  - `GET /api/service/status`
+  - `POST /api/service/install`
+  - `POST /api/service/uninstall`
+  - `POST /api/service/start`
+  - `POST /api/service/stop`
+- [x] 14.5 Wire service module into main.rs and api/mod.rs
+- [x] 14.6 Run tests and verify build
+
+### Files Added/Modified
+- `backend/Cargo.toml` - Added service-manager v0.10, clap v4 dependencies
+- `backend/src/service/mod.rs` (new) - ServiceController with platform-specific status detection
+- `backend/src/api/service.rs` (new) - Service REST endpoints + 1 test
+- `backend/src/api/mod.rs` - Added service module export
+- `backend/src/main.rs` - Added CLI parsing with clap, service module, command handlers
+
+### CLI Interface
+```
+ralphtown serve      # Start server (default)
+ralphtown install    # Install as system service
+ralphtown uninstall  # Remove system service
+ralphtown start      # Start the service
+ralphtown stop       # Stop the service
+ralphtown status     # Show service status
+ralphtown --help     # Show help
+```
+
+### Service Label
+- All platforms: `com.ralphtown.server`
+
+### Verification
+- Backend cargo test: ✅ PASS (70 tests)
 - Frontend build: ✅ PASS
 - Frontend tests: ✅ PASS (1 test)
 
