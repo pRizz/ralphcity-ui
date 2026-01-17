@@ -10,28 +10,29 @@ See: .planning/PROJECT.md (updated 2026-01-17)
 ## Current Position
 
 Phase: 2 of 5 (Core Clone)
-Plan: 0 of ? in current phase
-Status: Ready to plan
-Last activity: 2026-01-17 - Phase 1 verified complete
+Plan: 1 of 2 in current phase
+Status: In progress
+Last activity: 2026-01-17 - Completed 02-01-PLAN.md
 
-Progress: [##........] 20%
+Progress: [###.......] 30%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 1
+- Total plans completed: 2
 - Average duration: 3 min
-- Total execution time: 0.06 hours
+- Total execution time: 0.1 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-cleanup | 1 | 3 min | 3 min |
+| 02-core-clone | 1 | 3 min | 3 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (3 min)
-- Trend: N/A (baseline)
+- Last 5 plans: 01-01 (3 min), 02-01 (3 min)
+- Trend: Stable
 
 *Updated after each plan completion*
 
@@ -47,6 +48,9 @@ Recent decisions affecting current work:
 | 2026-01-17 | Use rusqlite::Error::FromSqlConversionFailure to wrap parse errors | Allows errors to propagate through rusqlite's Result type in row closures | DB layer |
 | 2026-01-17 | Change enum from_str() to return Result instead of Option | Consistency with parse_enum helper | DB models |
 | 2026-01-17 | Only log internal errors (500), not NotFound (404) | NotFound is normal API flow | Error handling |
+| 2026-01-17 | Use git2 RepoBuilder for clone | Follows existing git2 pattern, public repos only for Phase 2 | Git operations |
+| 2026-01-17 | Clone to ~/ralphtown/{repo-name} | Predictable user-visible location | Clone destination |
+| 2026-01-17 | Use spawn_blocking for git2 clone | git2 is synchronous, must not block async runtime | API handlers |
 
 ### Pending Todos
 
@@ -58,6 +62,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-01-17
-Stopped at: Phase 1 complete, ready for Phase 2
+Last session: 2026-01-17T18:16:11Z
+Stopped at: Completed 02-01-PLAN.md
 Resume file: None

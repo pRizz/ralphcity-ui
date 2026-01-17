@@ -45,7 +45,7 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 02-01-PLAN.md — Backend clone endpoint + git clone function
+- [x] 02-01-PLAN.md — Backend clone endpoint + git clone function
 - [ ] 02-02-PLAN.md — Frontend CloneDialog + RepoSelector integration
 
 ### Phase 3: Clone Progress
@@ -98,7 +98,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Cleanup | 1/1 | Complete | 2026-01-17 |
-| 2. Core Clone | 0/2 | Planned | - |
+| 2. Core Clone | 1/2 | In progress | - |
 | 3. Clone Progress | 0/? | Not started | - |
 | 4. Error Handling | 0/? | Not started | - |
 | 5. Authentication | 0/? | Not started | - |
