@@ -341,6 +341,18 @@ impl GitManager {
         Ok(deltas)
     }
 
+    // --- Clone operation ---
+
+    /// Clone a repository from URL to destination path
+    ///
+    /// This is a synchronous operation. Callers should use `tokio::task::spawn_blocking`
+    /// to avoid blocking the async runtime.
+    pub fn clone(url: &str, dest: &Path) -> GitResult<git2::Repository> {
+        git2::build::RepoBuilder::new()
+            .clone(url, dest)
+            .map_err(|e| GitError::OperationFailed(format!("Clone failed: {}", e.message())))
+    }
+
     // --- Write operations using CLI subprocess ---
 
     /// Execute git pull
@@ -597,5 +609,61 @@ mod tests {
 
         let result = GitManager::checkout(Path::new("/tmp"), "foo..bar");
         assert!(matches!(result, Err(GitError::InvalidBranch(_))));
+    }
+
+    #[test]
+    fn test_clone_to_temp_directory() {
+        // Create source repo with a commit
+        let (source_dir, source_repo) = create_test_repo();
+
+        // Add a file and commit it
+        let file_path = source_dir.path().join("test.txt");
+        fs::write(&file_path, "test content").expect("Failed to write file");
+
+        let mut index = source_repo.index().expect("Failed to get index");
+        index.add_path(Path::new("test.txt")).expect("Failed to add file");
+        index.write().expect("Failed to write index");
+
+        let tree_id = index.write_tree().expect("Failed to write tree");
+        let tree = source_repo.find_tree(tree_id).expect("Failed to find tree");
+        let sig = source_repo.signature().expect("Failed to create signature");
+        let parent = source_repo.head().expect("Failed to get HEAD")
+            .peel_to_commit().expect("Failed to peel to commit");
+        source_repo.commit(Some("HEAD"), &sig, &sig, "Add test file", &tree, &[&parent])
+            .expect("Failed to commit");
+
+        // Clone to a new temp directory
+        let dest_dir = TempDir::new().expect("Failed to create dest temp dir");
+        let clone_dest = dest_dir.path().join("cloned-repo");
+
+        let cloned_repo = GitManager::clone(
+            &format!("file://{}", source_dir.path().display()),
+            &clone_dest
+        ).expect("Clone should succeed");
+
+        // Verify clone was successful
+        assert!(clone_dest.exists());
+        assert!(clone_dest.join(".git").exists());
+
+        // Verify cloned content
+        assert!(clone_dest.join("test.txt").exists());
+        let content = fs::read_to_string(clone_dest.join("test.txt")).expect("Failed to read file");
+        assert_eq!(content, "test content");
+
+        // Verify we can get status from cloned repo
+        let status = GitManager::status(&clone_dest).expect("Failed to get status");
+        assert!(!status.branch.is_empty());
+
+        // Drop the cloned repo reference to release file handles
+        drop(cloned_repo);
+    }
+
+    #[test]
+    fn test_clone_invalid_url() {
+        let dest_dir = TempDir::new().expect("Failed to create dest temp dir");
+        let clone_dest = dest_dir.path().join("cloned-repo");
+
+        let result = GitManager::clone("not-a-valid-url", &clone_dest);
+        assert!(matches!(result, Err(GitError::OperationFailed(_))));
     }
 }
