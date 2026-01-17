@@ -58,7 +58,11 @@ pub enum CloneEvent {
     /// Clone completed successfully
     Complete { repo: Repo, message: String },
     /// Clone failed with error
-    Error { message: String },
+    Error {
+        message: String,
+        #[serde(skip_serializing_if = "Vec::is_empty", default)]
+        help_steps: Vec<String>,
+    },
 }
 
 /// Request body for scanning directories
@@ -277,7 +281,7 @@ async fn clone_repo(
     tokio::task::spawn_blocking(move || GitManager::clone(&url_clone, &dest_clone))
         .await
         .map_err(|e| AppError::Internal(format!("Clone task failed: {}", e)))?
-        .map_err(|e| AppError::Internal(format!("Clone failed: {}", e)))?;
+        .map_err(AppError::from)?;
 
     // Insert repo into database
     let path_str = dest.to_string_lossy().to_string();
@@ -299,9 +303,9 @@ type SseStream = Pin<Box<dyn Stream<Item = Result<Event, Infallible>> + Send>>;
 type SseResponse = Sse<axum::response::sse::KeepAliveStream<SseStream>>;
 
 /// Create an error SSE response
-fn error_sse(message: String) -> SseResponse {
+fn error_sse(message: String, help_steps: Vec<String>) -> SseResponse {
     let stream = async_stream::stream! {
-        let event = CloneEvent::Error { message };
+        let event = CloneEvent::Error { message, help_steps };
         let data = serde_json::to_string(&event).unwrap_or_default();
         yield Ok(Event::default().event("error").data(data));
     };
@@ -320,7 +324,7 @@ async fn clone_with_progress_sse(
     let repo_name = match extract_repo_name(&query.url) {
         Ok(name) => name,
         Err(e) => {
-            return error_sse(e.to_string());
+            return error_sse(e.to_string(), Vec::new());
         }
     };
 
@@ -328,20 +332,20 @@ async fn clone_with_progress_sse(
     let home = match dirs::home_dir() {
         Some(h) => h,
         None => {
-            return error_sse("Could not determine home directory".to_string());
+            return error_sse("Could not determine home directory".to_string(), Vec::new());
         }
     };
     let dest: PathBuf = home.join("ralphtown").join(&repo_name);
 
     // Check if destination already exists
     if dest.exists() {
-        return error_sse(format!("Directory already exists: {}", dest.display()));
+        return error_sse(format!("Directory already exists: {}", dest.display()), Vec::new());
     }
 
     // Create parent directory if needed
     if let Some(parent) = dest.parent() {
         if let Err(e) = std::fs::create_dir_all(parent) {
-            return error_sse(format!("Failed to create directory: {}", e));
+            return error_sse(format!("Failed to create directory: {}", e), Vec::new());
         }
     }
 
@@ -394,22 +398,37 @@ async fn clone_with_progress_sse(
                     Err(e) => {
                         let event = CloneEvent::Error {
                             message: format!("Failed to save repo to database: {}", e),
+                            help_steps: Vec::new(),
                         };
                         let data = serde_json::to_string(&event).unwrap_or_default();
                         yield Ok(Event::default().event("error").data(data));
                     }
                 }
             }
-            Ok(Err(e)) => {
-                let event = CloneEvent::Error {
-                    message: format!("Clone failed: {}", e),
+            Ok(Err(clone_error)) => {
+                // Extract help_steps from CloneError variants
+                let (message, help_steps) = match &clone_error {
+                    crate::git::CloneError::SshAuthFailed { message, help_steps } => {
+                        (message.clone(), help_steps.clone())
+                    }
+                    crate::git::CloneError::HttpsAuthFailed { message, help_steps } => {
+                        (message.clone(), help_steps.clone())
+                    }
+                    crate::git::CloneError::NetworkError { message } => {
+                        (format!("Network error: {}", message), Vec::new())
+                    }
+                    crate::git::CloneError::OperationFailed { message } => {
+                        (format!("Clone failed: {}", message), Vec::new())
+                    }
                 };
+                let event = CloneEvent::Error { message, help_steps };
                 let data = serde_json::to_string(&event).unwrap_or_default();
                 yield Ok(Event::default().event("error").data(data));
             }
             Err(e) => {
                 let event = CloneEvent::Error {
                     message: format!("Clone task panicked: {}", e),
+                    help_steps: Vec::new(),
                 };
                 let data = serde_json::to_string(&event).unwrap_or_default();
                 yield Ok(Event::default().event("error").data(data));

@@ -149,5 +149,64 @@ impl From<DbError> for AppError {
     }
 }
 
+impl From<crate::git::CloneError> for AppError {
+    fn from(err: crate::git::CloneError) -> Self {
+        match err {
+            crate::git::CloneError::SshAuthFailed { message, help_steps } => {
+                AppError::UserActionRequired {
+                    code: "SSH_AUTH_FAILED".to_string(),
+                    message,
+                    details: None,
+                    help_steps,
+                }
+            }
+            crate::git::CloneError::HttpsAuthFailed { message, help_steps } => {
+                AppError::UserActionRequired {
+                    code: "HTTPS_AUTH_FAILED".to_string(),
+                    message,
+                    details: None,
+                    help_steps,
+                }
+            }
+            crate::git::CloneError::NetworkError { message } => {
+                AppError::Internal(format!("Network error: {}", message))
+            }
+            crate::git::CloneError::OperationFailed { message } => {
+                AppError::Internal(format!("Clone failed: {}", message))
+            }
+        }
+    }
+}
+
+impl From<crate::ralph::RalphError> for AppError {
+    fn from(err: crate::ralph::RalphError) -> Self {
+        match err {
+            crate::ralph::RalphError::RepoBusy(repo_id) => AppError::BadRequest(format!(
+                "Repository {} already has a running ralph process",
+                repo_id
+            )),
+            crate::ralph::RalphError::SessionAlreadyRunning(session_id) => AppError::BadRequest(format!(
+                "Session {} already has a running process",
+                session_id
+            )),
+            crate::ralph::RalphError::SpawnFailed(msg) => {
+                AppError::Internal(format!("Failed to start ralph: {}", msg))
+            }
+            crate::ralph::RalphError::NotFound { message, help_steps } => {
+                AppError::UserActionRequired {
+                    code: "RALPH_NOT_FOUND".to_string(),
+                    message,
+                    details: None,
+                    help_steps,
+                }
+            }
+            crate::ralph::RalphError::NotRunning(session_id) => AppError::BadRequest(format!(
+                "Session {} has no running process",
+                session_id
+            )),
+        }
+    }
+}
+
 /// Result type alias using AppError
 pub type AppResult<T> = Result<T, AppError>;
