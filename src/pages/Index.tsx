@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { AgentSidebar } from "@/components/gastown/AgentSidebar";
-import { MainPanel } from "@/components/gastown/MainPanel";
-import { mockGastownInstances } from "@/data/mockData";
-import { GastownInstance, Repository, ChatMessage } from "@/types/gastown";
+import { AgentSidebar } from "@/components/ralphtown/AgentSidebar";
+import { MainPanel } from "@/components/ralphtown/MainPanel";
+import { mockRalphtownInstances } from "@/data/mockData";
+import { RalphtownInstance, Repository, ChatMessage } from "@/types/ralphtown";
 import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
-  const [instances, setInstances] = useState<GastownInstance[]>(mockGastownInstances);
+  const [instances, setInstances] = useState<RalphtownInstance[]>(mockRalphtownInstances);
   const [activeInstanceId, setActiveInstanceId] = useState<string | null>(null);
   const { toast } = useToast();
 
@@ -14,17 +14,17 @@ const Index = () => {
     ? instances.find((i) => i.id === activeInstanceId) || null
     : null;
 
-  const handleNewGastown = () => {
+  const handleNewSession = () => {
     setActiveInstanceId(null);
   };
 
-  const handleSpawnGastown = (
+  const handleStartSession = (
     prompt: string,
     repo: Repository,
     branch: string,
     model: string
   ) => {
-    const newInstance: GastownInstance = {
+    const newInstance: RalphtownInstance = {
       id: crypto.randomUUID(),
       title: prompt.length > 30 ? prompt.slice(0, 30) + "..." : prompt,
       repo: repo.name,
@@ -52,7 +52,7 @@ const Index = () => {
     setActiveInstanceId(newInstance.id);
 
     toast({
-      title: "Gastown spawned",
+      title: "Session started",
       description: `Running "${newInstance.title}" on ${repo.fullName}`,
     });
   };
@@ -90,11 +90,11 @@ const Index = () => {
         instances={instances}
         activeInstanceId={activeInstanceId}
         onSelectInstance={setActiveInstanceId}
-        onNewGastown={handleNewGastown}
+        onNewSession={handleNewSession}
       />
       <MainPanel
         activeInstance={activeInstance}
-        onSpawnGastown={handleSpawnGastown}
+        onStartSession={handleStartSession}
         onSendMessage={handleSendMessage}
       />
     </div>

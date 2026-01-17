@@ -6,7 +6,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Repository } from "@/types/gastown";
+import { Repository } from "@/types/ralphtown";
 
 interface RepoSelectorProps {
   repositories: Repository[];

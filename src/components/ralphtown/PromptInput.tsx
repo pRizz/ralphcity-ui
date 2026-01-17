@@ -36,7 +36,7 @@ export function PromptInput({ onSubmit }: PromptInputProps) {
       {/* Prompt Box */}
       <div className="bg-card border border-border rounded-xl overflow-hidden">
         <Textarea
-          placeholder="Ask gastown to build, fix bugs, explore"
+          placeholder="Ask Ralph to build, fix bugs, explore"
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
           onKeyDown={handleKeyDown}

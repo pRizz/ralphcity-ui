@@ -7,7 +7,7 @@ export interface ChatMessage {
   timestamp: Date;
 }
 
-export interface GastownInstance {
+export interface RalphtownInstance {
   id: string;
   title: string;
   repo: string;

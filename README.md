@@ -1,73 +1,42 @@
-# Gascountry - AI Agent Launcher
+# Ralphtown - Web UI for Ralph CLI
 
-[![GitHub](https://img.shields.io/badge/GitHub-Source%20Code-blue?logo=github)](https://github.com/pRizz/gascountry)
+[![GitHub](https://img.shields.io/badge/GitHub-Source%20Code-blue?logo=github)](https://github.com/pRizz/ralphtown)
 
-A developer-focused UI for spawning and managing AI agent groups that interact with GitHub repositories.
+A web-based UI for the Ralph CLI orchestrator, enabling users to interact with AI coding agents through a browser.
 
-**Source Code:** [https://github.com/pRizz/gascountry](https://github.com/pRizz/gascountry)
+**Source Code:** [https://github.com/pRizz/ralphtown](https://github.com/pRizz/ralphtown)
 
 ## Features
 
-- Spawn AI agents with natural language prompts
-- Select GitHub repositories and branches
+- Send prompts to AI agents via natural language
+- Real-time streaming output from Ralph executions
+- Select local repositories and branches
 - View conversation history with agents
-- Track agent status and diff statistics
+- Track session status and diff statistics
 - Dark, developer-focused interface
 
-## Project info
-
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
-
-## How can I edit this code?
-
-There are several ways of editing your application.
-
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## Getting Started
 
 The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
 
-Follow these steps:
-
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+# Clone the repository
+git clone https://github.com/pRizz/ralphtown.git
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# Navigate to the project directory
+cd ralphtown
 
-# Step 3: Install the necessary dependencies.
+# Install dependencies
 npm i
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start the development server
 npm run dev
 ```
 
-## What technologies are used for this project?
-
-This project is built with:
+## Tech Stack
 
 - Vite
 - TypeScript
 - React
 - shadcn-ui
 - Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)

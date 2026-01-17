@@ -1,4 +1,4 @@
-import { GastownInstance, Repository, ChatMessage } from "@/types/gastown";
+import { RalphtownInstance, Repository, ChatMessage } from "@/types/ralphtown";
 
 export const mockRepositories: Repository[] = [
   {
@@ -19,9 +19,9 @@ export const mockRepositories: Repository[] = [
   },
   {
     id: "3",
-    fullName: "pRizz/gastown",
+    fullName: "pRizz/ralphtown",
     owner: "pRizz",
-    name: "gastown",
+    name: "ralphtown",
     defaultBranch: "main",
     branches: ["main", "feature/agents"],
   },
@@ -64,7 +64,7 @@ The changes have been committed and are ready for review.`,
   },
 ];
 
-export const mockGastownInstances: GastownInstance[] = [
+export const mockRalphtownInstances: RalphtownInstance[] = [
   {
     id: "1",
     title: "Public API readiness",
@@ -78,7 +78,7 @@ export const mockGastownInstances: GastownInstance[] = [
   {
     id: "2",
     title: "Readme beads installation",
-    repo: "gastown",
+    repo: "ralphtown",
     branch: "main",
     status: "running",
     createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000),

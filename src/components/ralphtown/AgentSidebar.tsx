@@ -3,20 +3,20 @@ import { Search, SlidersHorizontal, SquarePen, Github, Globe } from "lucide-reac
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { AgentListItem } from "./AgentListItem";
-import { GastownInstance } from "@/types/gastown";
+import { RalphtownInstance } from "@/types/ralphtown";
 
 interface AgentSidebarProps {
-  instances: GastownInstance[];
+  instances: RalphtownInstance[];
   activeInstanceId: string | null;
   onSelectInstance: (id: string | null) => void;
-  onNewGastown: () => void;
+  onNewSession: () => void;
 }
 
 export function AgentSidebar({
   instances,
   activeInstanceId,
   onSelectInstance,
-  onNewGastown,
+  onNewSession,
 }: AgentSidebarProps) {
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -27,11 +27,11 @@ export function AgentSidebar({
   );
 
   // Group instances by time
-  const groupInstances = (instances: GastownInstance[]) => {
+  const groupInstances = (instances: RalphtownInstance[]) => {
     const now = Date.now();
-    const yesterday: GastownInstance[] = [];
-    const thisWeek: GastownInstance[] = [];
-    const older: GastownInstance[] = [];
+    const yesterday: RalphtownInstance[] = [];
+    const thisWeek: RalphtownInstance[] = [];
+    const older: RalphtownInstance[] = [];
 
     instances.forEach((instance) => {
       const hoursAgo = (now - instance.createdAt.getTime()) / (1000 * 60 * 60);
@@ -57,7 +57,7 @@ export function AgentSidebar({
           <div className="w-7 h-7 rounded bg-foreground flex items-center justify-center">
             <Globe className="h-4 w-4 text-background" />
           </div>
-          <span className="font-semibold text-foreground">Gascountry</span>
+          <span className="font-semibold text-foreground">Ralphtown</span>
         </div>
         <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground">
           <SquarePen className="h-4 w-4" />
@@ -69,7 +69,7 @@ export function AgentSidebar({
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search gastowns..."
+            placeholder="Search sessions..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9 pr-9 bg-sidebar-accent border-sidebar-border text-sm h-9"
@@ -84,14 +84,14 @@ export function AgentSidebar({
         </div>
       </div>
 
-      {/* New Gascountry Button */}
+      {/* New Session Button */}
       <div className="px-3 pb-3">
         <Button
-          onClick={onNewGastown}
+          onClick={onNewSession}
           variant="outline"
           className="w-full justify-center text-sm h-9 border-sidebar-border bg-sidebar-accent hover:bg-accent"
         >
-          New gascountry
+          New session
         </Button>
       </div>
 
@@ -155,13 +155,13 @@ export function AgentSidebar({
       {/* Source Code Link */}
       <div className="px-3 py-3 border-t border-sidebar-border mt-auto">
         <a
-          href="https://github.com/pRizz/gascountry"
+          href="https://github.com/pRizz/ralphtown"
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
           <Github className="h-4 w-4" />
-          <span>gascountry source code</span>
+          <span>ralphtown source code</span>
         </a>
       </div>
     </aside>

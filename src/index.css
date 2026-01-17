@@ -39,7 +39,7 @@ All colors MUST be HSL.
 
     --radius: 0.5rem;
 
-    /* Gastown specific tokens */
+    /* Ralphtown specific tokens */
     --diff-add: 142 76% 46%;
     --diff-remove: 0 84% 60%;
     --agent-running: 142 76% 46%;

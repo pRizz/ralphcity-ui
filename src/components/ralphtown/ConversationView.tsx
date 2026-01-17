@@ -2,11 +2,11 @@ import { useState, useRef, useEffect } from "react";
 import { ArrowUp, GitBranch, Loader2, Check, AlertCircle, Clock, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { GastownInstance, ChatMessage } from "@/types/gastown";
+import { RalphtownInstance, ChatMessage } from "@/types/ralphtown";
 import { cn } from "@/lib/utils";
 
 interface ConversationViewProps {
-  instance: GastownInstance;
+  instance: RalphtownInstance;
   onSendMessage: (instanceId: string, message: string) => void;
 }
 

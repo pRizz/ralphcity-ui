@@ -4,16 +4,16 @@ import { Button } from "@/components/ui/button";
 import { RepoSelector } from "./RepoSelector";
 import { PromptInput } from "./PromptInput";
 import { ConversationView } from "./ConversationView";
-import { GastownInstance, Repository } from "@/types/gastown";
+import { RalphtownInstance, Repository } from "@/types/ralphtown";
 import { mockRepositories } from "@/data/mockData";
 
 interface MainPanelProps {
-  activeInstance: GastownInstance | null;
-  onSpawnGastown: (prompt: string, repo: Repository, branch: string, model: string) => void;
+  activeInstance: RalphtownInstance | null;
+  onStartSession: (prompt: string, repo: Repository, branch: string, model: string) => void;
   onSendMessage: (instanceId: string, message: string) => void;
 }
 
-export function MainPanel({ activeInstance, onSpawnGastown, onSendMessage }: MainPanelProps) {
+export function MainPanel({ activeInstance, onStartSession, onSendMessage }: MainPanelProps) {
   const [selectedRepo, setSelectedRepo] = useState<Repository | null>(mockRepositories[0]);
   const [selectedBranch, setSelectedBranch] = useState(mockRepositories[0].defaultBranch);
 
@@ -24,7 +24,7 @@ export function MainPanel({ activeInstance, onSpawnGastown, onSendMessage }: Mai
 
   const handleSubmit = (prompt: string, model: string) => {
     if (selectedRepo) {
-      onSpawnGastown(prompt, selectedRepo, selectedBranch, model);
+      onStartSession(prompt, selectedRepo, selectedBranch, model);
     }
   };
 

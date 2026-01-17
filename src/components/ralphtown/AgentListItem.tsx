@@ -1,9 +1,9 @@
-import { GastownInstance } from "@/types/gastown";
+import { RalphtownInstance } from "@/types/ralphtown";
 import { Check, Loader2, AlertCircle, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface AgentListItemProps {
-  instance: GastownInstance;
+  instance: RalphtownInstance;
   isActive: boolean;
   onClick: () => void;
 }
