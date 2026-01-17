@@ -1,6 +1,6 @@
 # Ralphtown Implementation Scratchpad
 
-## Current Focus: Step 13 Complete - Moving to Step 14
+## Current Focus: Step 15 Complete - Moving to Step 16
 
 ### Progress Checklist (from plan.md)
 - [x] Step 0: Rename project from Gascountry to Ralphtown
@@ -18,7 +18,7 @@
 - [x] Step 12: Frontend WebSocket integration
 - [x] Step 13: Configuration management
 - [x] Step 14: Service installation
-- [ ] Step 15: Cargo install packaging
+- [x] Step 15: Cargo install packaging
 - [ ] Step 16: Polish and integration testing
 
 ---
@@ -534,6 +534,52 @@ ralphtown --help     # Show help
 
 ### Service Label
 - All platforms: `com.ralphtown.server`
+
+### Verification
+- Backend cargo test: ✅ PASS (70 tests)
+- Frontend build: ✅ PASS
+- Frontend tests: ✅ PASS (1 test)
+
+---
+
+## Step 15 - Cargo Install Packaging - COMPLETED
+
+### Tasks
+- [x] 15.1 Add `rust-embed` v8 and `mime_guess` v2 dependencies to Cargo.toml
+- [x] 15.2 Create `backend/src/assets.rs` - Embedded frontend assets module
+  - Uses rust-embed to embed frontend/dist at compile time
+  - Serves static files with correct MIME types via mime_guess
+  - Cache headers: immutable for assets/, no-cache for index.html
+- [x] 15.3 Update `backend/src/main.rs` to include assets module
+- [x] 15.4 Add fallback handler to serve frontend for non-API routes
+  - API routes (/api/*) take precedence
+  - All other routes fall back to embedded frontend
+  - SPA routing: non-asset paths serve index.html
+- [x] 15.5 Build frontend and verify embedding works
+- [x] 15.6 Run tests to ensure nothing broke
+
+### Files Added/Modified
+- `backend/Cargo.toml` - Added rust-embed v8, mime_guess v2 dependencies
+- `backend/src/assets.rs` (new) - Embedded frontend assets with SPA fallback
+- `backend/src/main.rs` - Added assets module, fallback handler for frontend
+
+### How Frontend Bundling Works
+1. Build frontend: `cd frontend && npm run build` → produces `frontend/dist/`
+2. rust-embed embeds `frontend/dist/` into binary at compile time
+3. Fallback handler serves embedded assets for all non-API routes
+4. SPA routing: any non-file path returns index.html for client-side routing
+
+### Usage
+```bash
+# Build frontend first
+cd frontend && npm run build
+
+# Install ralphtown binary
+cargo install --path backend
+
+# Run standalone (frontend embedded in binary)
+ralphtown serve
+```
 
 ### Verification
 - Backend cargo test: ✅ PASS (70 tests)

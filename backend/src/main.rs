@@ -1,3 +1,4 @@
+mod assets;
 pub mod api;
 pub mod db;
 mod error;
@@ -77,6 +78,7 @@ pub fn create_app(state: AppState) -> Router {
         .nest("/api", api::service::router())
         .nest("/api", ws::router())
         .with_state(state)
+        .fallback(assets::serve_frontend)
         .layer(cors)
 }
 
