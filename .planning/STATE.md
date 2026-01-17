@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-01-17)
 
 **Core value:** Users can run autonomous AI coding sessions across multiple repositories from a single interface with real-time feedback.
-**Current focus:** Phase 5 - Authentication
+**Current focus:** Phase 5 - Authentication (COMPLETE)
 
 ## Current Position
 
 Phase: 5 of 5 (Authentication)
-Plan: 1 of 2 in current phase
-Status: In progress
-Last activity: 2026-01-17 - Completed 05-01-PLAN.md (Credential Callback Support)
+Plan: 2 of 2 in current phase
+Status: Phase complete
+Last activity: 2026-01-17 - Completed 05-02-PLAN.md (Credential Input UI)
 
-Progress: [#########.] 90%
+Progress: [##########] 100%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 8
+- Total plans completed: 9
 - Average duration: 3.4 min
-- Total execution time: 0.45 hours
+- Total execution time: 0.5 hours
 
 **By Phase:**
 
@@ -31,10 +31,10 @@ Progress: [#########.] 90%
 | 02-core-clone | 2 | 5 min | 2.5 min |
 | 03-clone-progress | 2 | 5 min | 2.5 min |
 | 04-error-handling | 2 | 8 min | 4 min |
-| 05-authentication | 1 | 4 min | 4 min |
+| 05-authentication | 2 | 8 min | 4 min |
 
 **Recent Trend:**
-- Last 5 plans: 03-02 (1 min), 04-01 (6 min), 04-02 (2 min), 05-01 (4 min)
+- Last 5 plans: 04-01 (6 min), 04-02 (2 min), 05-01 (4 min), 05-02 (4 min)
 - Trend: Stable
 
 *Updated after each plan completion*
@@ -58,6 +58,8 @@ Recent decisions affecting current work:
 | 2026-01-17 | UserActionRequired returns 422 status | Same as UnprocessableEntity, user must take action | API responses |
 | 2026-01-17 | Cancel EventSource when dialog closes during clone | Prevents orphaned connections | Frontend UI |
 | 2026-01-17 | CloneEvent enum with tagged JSON variants | Frontend can easily parse event types | API/Frontend |
+| 2026-01-17 | POST with ReadableStream for credential retry | EventSource only supports GET; POST needed for credentials | Frontend auth |
+| 2026-01-17 | Inline trust text + collapsible detail | Balance visibility with information density | Frontend UX |
 
 ### Pending Todos
 
@@ -69,6 +71,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-01-17T20:15:51Z
-Stopped at: Completed 05-01-PLAN.md
+Last session: 2026-01-17T20:20:45Z
+Stopped at: Completed 05-02-PLAN.md (All phases complete)
 Resume file: None
