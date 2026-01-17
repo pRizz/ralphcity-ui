@@ -567,6 +567,107 @@ impl GitManager {
             .map_err(|e| classify_clone_error(e, url))
     }
 
+    /// Clone a repository with optional credentials and progress reporting
+    ///
+    /// This is a synchronous operation. Callers should use `tokio::task::spawn_blocking`
+    /// to avoid blocking the async runtime.
+    ///
+    /// The credential callback uses state tracking to prevent infinite loops when
+    /// libgit2 repeatedly requests credentials. Each auth method is tried once.
+    pub fn clone_with_credentials(
+        url: &str,
+        dest: &Path,
+        credentials: Option<CloneCredentials>,
+        progress_tx: mpsc::Sender<CloneProgress>,
+    ) -> Result<git2::Repository, CloneError> {
+        let creds = credentials.unwrap_or_default();
+        let state = Rc::new(RefCell::new(CredentialState::default()));
+        let state_clone = Rc::clone(&state);
+
+        // Clone credential values for the closure
+        let passphrase = creds.ssh_passphrase.clone();
+        let key_path = creds.ssh_key_path.clone();
+        let username = creds.username.clone();
+        let password = creds.password.clone();
+
+        let mut callbacks = git2::RemoteCallbacks::new();
+
+        // Progress callback
+        callbacks.transfer_progress(move |stats| {
+            let progress = CloneProgress {
+                received_objects: stats.received_objects(),
+                total_objects: stats.total_objects(),
+                received_bytes: stats.received_bytes(),
+                indexed_objects: stats.indexed_objects(),
+                total_deltas: stats.total_deltas(),
+                indexed_deltas: stats.indexed_deltas(),
+            };
+            // Use try_send to drop updates if channel is full (natural throttling)
+            let _ = progress_tx.try_send(progress);
+            true // continue cloning
+        });
+
+        // Credential callback with state tracking
+        callbacks.credentials(move |_url, username_from_url, allowed| {
+            let mut state = state_clone.borrow_mut();
+
+            // SSH authentication path
+            if allowed.contains(git2::CredentialType::SSH_KEY) {
+                // Try ssh-agent first (only once)
+                if !state.tried_ssh_agent {
+                    state.tried_ssh_agent = true;
+                    let user = username_from_url.unwrap_or("git");
+                    match git2::Cred::ssh_key_from_agent(user) {
+                        Ok(cred) => return Ok(cred),
+                        Err(_) => {} // Fall through to key file
+                    }
+                }
+
+                // Try SSH key file (only once)
+                if !state.tried_ssh_key {
+                    state.tried_ssh_key = true;
+                    let user = username_from_url.unwrap_or("git");
+
+                    // Use provided key path or find default
+                    let key = match &key_path {
+                        Some(p) => Ok(p.clone()),
+                        None => find_default_ssh_key(),
+                    };
+
+                    if let Ok(key_path) = key {
+                        return git2::Cred::ssh_key(
+                            user,
+                            None, // public key (optional)
+                            &key_path,
+                            passphrase.as_deref(),
+                        );
+                    }
+                }
+            }
+
+            // HTTPS authentication path
+            if allowed.contains(git2::CredentialType::USER_PASS_PLAINTEXT) {
+                if !state.tried_userpass {
+                    state.tried_userpass = true;
+                    if let (Some(u), Some(p)) = (&username, &password) {
+                        return git2::Cred::userpass_plaintext(u, p);
+                    }
+                }
+            }
+
+            // All methods exhausted
+            Err(git2::Error::from_str("all authentication methods failed"))
+        });
+
+        let mut fetch_options = git2::FetchOptions::new();
+        fetch_options.remote_callbacks(callbacks);
+
+        git2::build::RepoBuilder::new()
+            .fetch_options(fetch_options)
+            .clone(url, dest)
+            .map_err(|e| classify_clone_error(e, url))
+    }
+
     // --- Write operations using CLI subprocess ---
 
     /// Execute git pull
