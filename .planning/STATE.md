@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-01-17)
 ## Current Position
 
 Phase: 3 of 5 (Clone Progress)
-Plan: 0 of ? in current phase
-Status: Ready to plan
-Last activity: 2026-01-17 - Phase 2 verified complete
+Plan: 1 of 2 in current phase
+Status: In progress
+Last activity: 2026-01-17 - Completed 03-01-PLAN.md
 
-Progress: [####......] 40%
+Progress: [#####.....] 50%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 3
+- Total plans completed: 4
 - Average duration: 3 min
-- Total execution time: 0.1 hours
+- Total execution time: 0.2 hours
 
 **By Phase:**
 
@@ -29,9 +29,10 @@ Progress: [####......] 40%
 |-------|-------|-------|----------|
 | 01-cleanup | 1 | 3 min | 3 min |
 | 02-core-clone | 2 | 5 min | 2.5 min |
+| 03-clone-progress | 1 | 4 min | 4 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (3 min), 02-01 (3 min), 02-02 (2 min)
+- Last 5 plans: 01-01 (3 min), 02-01 (3 min), 02-02 (2 min), 03-01 (4 min)
 - Trend: Stable
 
 *Updated after each plan completion*
@@ -53,6 +54,8 @@ Recent decisions affecting current work:
 | 2026-01-17 | Use spawn_blocking for git2 clone | git2 is synchronous, must not block async runtime | API handlers |
 | 2026-01-17 | CloneDialog follows existing Dialog pattern | UX consistency with "Add local path" dialog | Frontend |
 | 2026-01-17 | onCloneSuccess callback returns Repo | Parent can immediately select newly cloned repo | Frontend |
+| 2026-01-17 | Use try_send() for progress throttling | Drops updates if channel full, prevents backpressure blocking git | SSE progress |
+| 2026-01-17 | CloneEvent enum with tagged JSON variants | Frontend can easily parse event types | API/Frontend |
 
 ### Pending Todos
 
@@ -65,5 +68,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-17
-Stopped at: Phase 2 complete, ready for Phase 3
+Stopped at: Completed 03-01-PLAN.md
 Resume file: None

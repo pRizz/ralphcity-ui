@@ -59,7 +59,7 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 03-01-PLAN.md — Backend SSE endpoint + git2 progress callback
+- [x] 03-01-PLAN.md — Backend SSE endpoint + git2 progress callback
 - [ ] 03-02-PLAN.md — Frontend useCloneProgress hook + CloneDialog progress UI
 
 ### Phase 4: Error Handling
@@ -100,7 +100,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 |-------|----------------|--------|-----------|
 | 1. Cleanup | 1/1 | Complete | 2026-01-17 |
 | 2. Core Clone | 2/2 | Complete | 2026-01-17 |
-| 3. Clone Progress | 0/2 | Not started | - |
+| 3. Clone Progress | 1/2 | In progress | - |
 | 4. Error Handling | 0/? | Not started | - |
 | 5. Authentication | 0/? | Not started | - |
 
