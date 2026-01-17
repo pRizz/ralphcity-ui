@@ -17,6 +17,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 3: Clone Progress** - Real-time progress UI during clone operations
 - [x] **Phase 4: Error Handling** - Helpful error messages for common failure scenarios
 - [x] **Phase 5: Authentication** - Credential prompts for auth failures
+- [ ] **Phase 6: Repository Manager** - CRUD interface for viewing, cloning, and deleting repos
+- [ ] **Phase 7: Agent Orchestrator Selection** - Per-session orchestrator selection (Ralph, GSD, Gastown)
 
 ## Phase Details
 
@@ -93,10 +95,39 @@ Plans:
 - [x] 05-01-PLAN.md — Backend credential callback support (git2 credentials, POST endpoint)
 - [x] 05-02-PLAN.md — Frontend credential inputs with trust messaging and CLI alternative
 
+### Phase 6: Repository Manager
+**Goal**: Users can view, manage, and delete repositories from a dedicated settings/manager view
+**Depends on**: Phase 2
+**Requirements**: REPO-01, REPO-02, REPO-03, REPO-04
+**Success Criteria** (what must be TRUE):
+  1. User can access a repository manager view showing all repos in ~/ralphtown/
+  2. User can see repo details (name, path, clone date)
+  3. User can delete repos from the manager (removes from DB, optionally from disk)
+  4. User can initiate clone from the manager view (reuses existing clone dialog)
+**Plans**: 1 plan
+
+Plans:
+- [ ] 06-01-PLAN.md — RepositoryManagerDialog component with table, delete confirmation, and clone integration
+
+### Phase 7: Agent Orchestrator Selection
+**Goal**: Users can select different agent orchestrators per session with future options visible
+**Depends on**: Phase 5
+**Requirements**: TBD
+**Success Criteria** (what must be TRUE):
+  1. User can select an orchestrator when starting a session (dropdown or selector)
+  2. Ralph is available and functional as the default orchestrator
+  3. Other orchestrators (GSD, Gastown) are shown but disabled with "Coming Soon" badge
+  4. Selected orchestrator is persisted per-session in the database
+  5. Session uses the selected orchestrator when running
+**Plans**: 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 7 to break down)
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -105,6 +136,8 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | 3. Clone Progress | 2/2 | Complete | 2026-01-17 |
 | 4. Error Handling | 2/2 | Complete | 2026-01-17 |
 | 5. Authentication | 2/2 | Complete | 2026-01-17 |
+| 6. Repository Manager | 0/1 | Planned | — |
+| 7. Agent Orchestrator Selection | 0/? | Not Started | — |
 
 ---
 *Roadmap created: 2026-01-17*
