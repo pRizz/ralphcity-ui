@@ -1,11 +1,11 @@
 # Ralphtown Implementation Scratchpad
 
-## Current Focus: Step 1 Complete - Moving to Step 2
+## Current Focus: Step 2 Complete - Moving to Step 3
 
 ### Progress Checklist (from plan.md)
 - [x] Step 0: Rename project from Gascountry to Ralphtown
 - [x] Step 1: Project restructure to monorepo
-- [ ] Step 2: Backend scaffold with Axum
+- [x] Step 2: Backend scaffold with Axum
 - [ ] Step 3: Database layer with SQLite
 - [ ] Step 4: Repository management API
 - [ ] Step 5: Session management API
@@ -84,20 +84,41 @@ ralphtown/
 
 ---
 
-## Next: Step 2 - Backend Scaffold with Axum
+## Step 2 - COMPLETED
 
-Step 2 is partially complete since we already have:
-- Axum server with health check endpoint
-- CORS configuration
-- Basic logging with tracing
+### Changes Made
+- [x] Added `backend/src/error.rs` with AppError enum (Internal, NotFound, BadRequest)
+- [x] Error types implement IntoResponse for Axum HTTP responses
+- [x] Added AppResult<T> type alias for Result<T, AppError>
+- [x] Refactored main.rs to export `create_app()` function for testing
+- [x] Added integration test for health endpoint using axum-test v18
+- [x] Made HealthResponse public and derive Deserialize for test assertions
 
-Remaining tasks for Step 2:
-- [ ] Add basic error handling types
-- [ ] Test that server starts and health endpoint returns 200
+### Files Added/Modified
+- `backend/src/error.rs` (new) - Error handling types
+- `backend/src/main.rs` - Added error module, create_app(), and test
+- `backend/Cargo.toml` - Added axum-test v18 dev dependency
+
+### Verification
+- Backend cargo check: ✅ PASS
+- Backend cargo test: ✅ PASS (1 test)
+- Frontend build: ✅ PASS
+- Frontend tests: ✅ PASS (1 test)
+
+---
+
+## Next: Step 3 - Database Layer with SQLite
+
+Tasks:
+- [ ] Add rusqlite dependency
+- [ ] Create `backend/src/db/mod.rs` - Database struct, connection management
+- [ ] Create `backend/src/db/schema.rs` - Schema creation SQL
+- [ ] Create `backend/src/db/models.rs` - Rust structs matching tables
+- [ ] Store database in user's data directory (dirs crate)
+- [ ] Add tests for schema creation and basic CRUD
 
 ---
 
 ## Notes
 - Lint has pre-existing errors in shadcn-ui components (not from rename)
-- Tests pass (1/1)
-- Backend uses Axum 0.8, tower-http 0.6
+- Backend uses Axum 0.8, tower-http 0.6, axum-test 18
