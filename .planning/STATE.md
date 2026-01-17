@@ -5,21 +5,21 @@
 See: .planning/PROJECT.md (updated 2026-01-17)
 
 **Core value:** Users can run autonomous AI coding sessions across multiple repositories from a single interface with real-time feedback.
-**Current focus:** Phase 2 - Core Clone
+**Current focus:** Phase 3 - Sessions Panel
 
 ## Current Position
 
-Phase: 2 of 5 (Core Clone)
-Plan: 1 of 2 in current phase
-Status: In progress
-Last activity: 2026-01-17 - Completed 02-01-PLAN.md
+Phase: 2 of 5 (Core Clone) - COMPLETE
+Plan: 2 of 2 in current phase
+Status: Phase complete
+Last activity: 2026-01-17 - Completed 02-02-PLAN.md
 
-Progress: [###.......] 30%
+Progress: [####......] 40%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 2
+- Total plans completed: 3
 - Average duration: 3 min
 - Total execution time: 0.1 hours
 
@@ -28,10 +28,10 @@ Progress: [###.......] 30%
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-cleanup | 1 | 3 min | 3 min |
-| 02-core-clone | 1 | 3 min | 3 min |
+| 02-core-clone | 2 | 5 min | 2.5 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (3 min), 02-01 (3 min)
+- Last 5 plans: 01-01 (3 min), 02-01 (3 min), 02-02 (2 min)
 - Trend: Stable
 
 *Updated after each plan completion*
@@ -51,6 +51,8 @@ Recent decisions affecting current work:
 | 2026-01-17 | Use git2 RepoBuilder for clone | Follows existing git2 pattern, public repos only for Phase 2 | Git operations |
 | 2026-01-17 | Clone to ~/ralphtown/{repo-name} | Predictable user-visible location | Clone destination |
 | 2026-01-17 | Use spawn_blocking for git2 clone | git2 is synchronous, must not block async runtime | API handlers |
+| 2026-01-17 | CloneDialog follows existing Dialog pattern | UX consistency with "Add local path" dialog | Frontend |
+| 2026-01-17 | onCloneSuccess callback returns Repo | Parent can immediately select newly cloned repo | Frontend |
 
 ### Pending Todos
 
@@ -62,6 +64,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-01-17T18:16:11Z
-Stopped at: Completed 02-01-PLAN.md
+Last session: 2026-01-17T18:22:00Z
+Stopped at: Completed 02-02-PLAN.md
 Resume file: None
