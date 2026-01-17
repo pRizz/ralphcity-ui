@@ -50,7 +50,7 @@ export interface CloneProgress {
 export type CloneProgressEvent =
   | { type: "progress"; data: CloneProgress }
   | { type: "complete"; data: { repo: Repo; message: string } }
-  | { type: "error"; data: { message: string; help_steps?: string[] } };
+  | { type: "error"; data: { message: string; help_steps?: string[]; auth_type?: AuthType; can_retry_with_credentials?: boolean } };
 
 // --- Errors ---
 
@@ -63,10 +63,22 @@ export interface ErrorResponse {
   };
 }
 
+// Credential types for clone retry
+export type CredentialRequest =
+  | { type: "ssh_passphrase"; passphrase: string; key_path?: string }
+  | { type: "github_pat"; token: string }
+  | { type: "https_basic"; username: string; password: string };
+
+// Auth type hints from backend error response
+export type AuthType = "ssh" | "github_pat" | "https_basic";
+
+// Extended clone error info with retry hints
 export interface CloneErrorInfo {
   message: string;
   code?: string;
   help_steps?: string[];
+  auth_type?: AuthType;
+  can_retry_with_credentials?: boolean;
 }
 
 // --- Sessions ---

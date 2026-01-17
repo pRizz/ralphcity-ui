@@ -1,16 +1,17 @@
 import { useRef, useCallback, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/api/hooks";
-import type { CloneProgress, Repo } from "@/api/types";
+import type { CloneProgress, Repo, CredentialRequest, AuthType } from "@/api/types";
 
 export interface UseCloneProgressOptions {
   onProgress: (progress: CloneProgress) => void;
   onComplete: (repo: Repo, message: string) => void;
-  onError: (message: string, helpSteps?: string[]) => void;
+  onError: (message: string, helpSteps?: string[], authType?: AuthType, canRetry?: boolean) => void;
 }
 
 export interface UseCloneProgressReturn {
   startClone: (url: string) => void;
+  startCloneWithCredentials: (url: string, credentials: CredentialRequest) => void;
   cancel: () => void;
 }
 
@@ -86,8 +87,10 @@ export function useCloneProgress(
             const data = JSON.parse(messageEvent.data) as {
               message: string;
               help_steps?: string[];
+              auth_type?: AuthType;
+              can_retry_with_credentials?: boolean;
             };
-            onErrorRef.current(data.message, data.help_steps);
+            onErrorRef.current(data.message, data.help_steps, data.auth_type, data.can_retry_with_credentials);
           } catch {
             onErrorRef.current("Clone failed");
           }
@@ -104,6 +107,68 @@ export function useCloneProgress(
     [cancel, queryClient]
   );
 
+  // Start clone with credentials via POST (for retry after auth failure)
+  const startCloneWithCredentials = useCallback(
+    async (url: string, credentials: CredentialRequest) => {
+      cancel();
+
+      try {
+        const response = await fetch("/api/repos/clone-progress", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url, credentials }),
+        });
+
+        if (!response.ok || !response.body) {
+          onErrorRef.current("Failed to start clone");
+          return;
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n\n");
+          buffer = lines.pop() || "";
+
+          for (const chunk of lines) {
+            const dataMatch = chunk.match(/^data: (.+)$/m);
+            if (dataMatch) {
+              try {
+                const data = JSON.parse(dataMatch[1]);
+                if (data.type === "progress") {
+                  onProgressRef.current(data.data);
+                } else if (data.type === "complete") {
+                  queryClient.invalidateQueries({ queryKey: queryKeys.repos });
+                  onCompleteRef.current(data.data.repo, data.data.message);
+                  return;
+                } else if (data.type === "error") {
+                  onErrorRef.current(
+                    data.data.message,
+                    data.data.help_steps,
+                    data.data.auth_type,
+                    data.data.can_retry_with_credentials
+                  );
+                  return;
+                }
+              } catch (e) {
+                console.error("Failed to parse SSE message:", e);
+              }
+            }
+          }
+        }
+      } catch {
+        onErrorRef.current("Connection error");
+      }
+    },
+    [cancel, queryClient]
+  );
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -111,5 +176,5 @@ export function useCloneProgress(
     };
   }, [cancel]);
 
-  return { startClone, cancel };
+  return { startClone, startCloneWithCredentials, cancel };
 }
