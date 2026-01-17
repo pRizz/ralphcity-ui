@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { useCloneProgress } from "@/hooks/useCloneProgress";
 import { useToast } from "@/hooks/use-toast";
-import type { Repo, CloneProgress } from "@/api/types";
+import type { Repo, CloneProgress, AuthType, CredentialRequest } from "@/api/types";
 
 interface CloneDialogProps {
   open: boolean;
@@ -34,14 +34,28 @@ export function CloneDialog({ open, onOpenChange, onCloneSuccess }: CloneDialogP
   const [errorInfo, setErrorInfo] = useState<{
     message: string;
     helpSteps?: string[];
+    authType?: AuthType;
+    canRetry?: boolean;
   } | null>(null);
+  // Credential input states
+  const [credentialMode, setCredentialMode] = useState<AuthType | null>(null);
+  const [patToken, setPatToken] = useState("");
+  const [sshPassphrase, setSshPassphrase] = useState("");
+  const [httpUsername, setHttpUsername] = useState("");
+  const [httpPassword, setHttpPassword] = useState("");
   const { toast } = useToast();
 
-  const { startClone, cancel } = useCloneProgress({
+  const { startClone, startCloneWithCredentials, cancel } = useCloneProgress({
     onProgress: setCloneProgress,
     onComplete: (repo, message) => {
       setIsCloning(false);
       setCloneProgress(null);
+      // Reset credential state on success
+      setCredentialMode(null);
+      setPatToken("");
+      setSshPassphrase("");
+      setHttpUsername("");
+      setHttpPassword("");
       onCloneSuccess(repo);
       setGitUrl("");
       onOpenChange(false);
@@ -50,10 +64,13 @@ export function CloneDialog({ open, onOpenChange, onCloneSuccess }: CloneDialogP
         description: message,
       });
     },
-    onError: (message, helpSteps) => {
+    onError: (message, helpSteps, authType, canRetry) => {
       setIsCloning(false);
       setCloneProgress(null);
-      setErrorInfo({ message, helpSteps });
+      setErrorInfo({ message, helpSteps, authType, canRetry });
+      if (canRetry && authType) {
+        setCredentialMode(authType);
+      }
       toast({
         title: "Failed to clone repository",
         description: message,
@@ -88,7 +105,36 @@ export function CloneDialog({ open, onOpenChange, onCloneSuccess }: CloneDialogP
     if (!newOpen) {
       setGitUrl("");
       setErrorInfo(null);
+      setCredentialMode(null);
+      setPatToken("");
+      setSshPassphrase("");
+      setHttpUsername("");
+      setHttpPassword("");
     }
+  };
+
+  const handleRetryWithCredentials = () => {
+    if (!credentialMode) return;
+
+    let credentials: CredentialRequest;
+    if (credentialMode === "github_pat") {
+      credentials = { type: "github_pat", token: patToken };
+    } else if (credentialMode === "https_basic") {
+      credentials = { type: "https_basic", username: httpUsername, password: httpPassword };
+    } else {
+      credentials = { type: "ssh_passphrase", passphrase: sshPassphrase };
+    }
+
+    setErrorInfo(null);
+    setIsCloning(true);
+    startCloneWithCredentials(gitUrl, credentials);
+  };
+
+  const hasValidCredentials = () => {
+    if (credentialMode === "github_pat") return patToken.trim().length > 0;
+    if (credentialMode === "https_basic") return httpUsername.trim().length > 0 && httpPassword.trim().length > 0;
+    if (credentialMode === "ssh") return sshPassphrase.trim().length > 0;
+    return false;
   };
 
   // Calculate progress percentage
@@ -171,6 +217,80 @@ export function CloneDialog({ open, onOpenChange, onCloneSuccess }: CloneDialogP
                   </ul>
                 </div>
               )}
+            </div>
+          )}
+          {credentialMode && (
+            <div className="space-y-4 mt-4 p-4 border rounded-md bg-muted/50">
+              <h4 className="font-medium text-sm">Authentication Required</h4>
+
+              {credentialMode === "github_pat" && (
+                <div className="space-y-2">
+                  <Label htmlFor="pat">GitHub Personal Access Token</Label>
+                  <Input
+                    id="pat"
+                    type="password"
+                    value={patToken}
+                    onChange={(e) => setPatToken(e.target.value)}
+                    placeholder="ghp_xxxxxxxxxxxx"
+                    disabled={isCloning}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Used only for this clone. Not stored.
+                  </p>
+                </div>
+              )}
+
+              {credentialMode === "https_basic" && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="username">Username</Label>
+                    <Input
+                      id="username"
+                      value={httpUsername}
+                      onChange={(e) => setHttpUsername(e.target.value)}
+                      disabled={isCloning}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="password">Password</Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      value={httpPassword}
+                      onChange={(e) => setHttpPassword(e.target.value)}
+                      disabled={isCloning}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Used only for this clone. Not stored.
+                    </p>
+                  </div>
+                </>
+              )}
+
+              {credentialMode === "ssh" && (
+                <div className="space-y-2">
+                  <Label htmlFor="passphrase">SSH Key Passphrase</Label>
+                  <Input
+                    id="passphrase"
+                    type="password"
+                    value={sshPassphrase}
+                    onChange={(e) => setSshPassphrase(e.target.value)}
+                    placeholder="Enter passphrase for your SSH key"
+                    disabled={isCloning}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Used only for this clone. Not stored.
+                  </p>
+                </div>
+              )}
+
+              <Button
+                onClick={handleRetryWithCredentials}
+                disabled={isCloning || !hasValidCredentials()}
+                className="w-full"
+              >
+                {isCloning ? "Cloning..." : "Retry with Credentials"}
+              </Button>
             </div>
           )}
         </div>
