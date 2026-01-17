@@ -181,3 +181,21 @@ export interface ResetRequest {
 export interface CheckoutRequest {
   branch: string;
 }
+
+// --- WebSocket Messages ---
+
+// Client → Server messages
+export type WsClientMessage =
+  | { type: "subscribe"; session_id: string }
+  | { type: "unsubscribe"; session_id: string }
+  | { type: "cancel"; session_id: string }
+  | { type: "ping" };
+
+// Server → Client messages
+export type WsServerMessage =
+  | { type: "subscribed"; session_id: string }
+  | { type: "unsubscribed"; session_id: string }
+  | { type: "output"; session_id: string; stream: OutputStream; content: string }
+  | { type: "status"; session_id: string; status: SessionStatus }
+  | { type: "error"; message: string }
+  | { type: "pong" };

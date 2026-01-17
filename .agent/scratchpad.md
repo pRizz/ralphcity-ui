@@ -1,6 +1,6 @@
 # Ralphtown Implementation Scratchpad
 
-## Current Focus: Step 11 Complete - Moving to Step 12
+## Current Focus: Step 12 Complete - Moving to Step 13
 
 ### Progress Checklist (from plan.md)
 - [x] Step 0: Rename project from Gascountry to Ralphtown
@@ -15,7 +15,7 @@
 - [x] Step 9: Interrupt/cancel functionality
 - [x] Step 10: Git operations
 - [x] Step 11: Frontend API integration
-- [ ] Step 12: Frontend WebSocket integration
+- [x] Step 12: Frontend WebSocket integration
 - [ ] Step 13: Configuration management
 - [ ] Step 14: Service installation
 - [ ] Step 15: Cargo install packaging
@@ -331,6 +331,46 @@ ralphtown/
 ### Verification
 - Backend cargo test: ✅ PASS (58 tests)
 - Frontend tests: ✅ PASS (1 test)
+
+---
+
+## Step 12 - Frontend WebSocket Integration - COMPLETED
+
+### Tasks
+- [x] 12.1 Add WebSocket message types to `frontend/src/api/types.ts`
+  - WsClientMessage: subscribe, unsubscribe, cancel, ping
+  - WsServerMessage: subscribed, unsubscribed, output, status, error, pong
+- [x] 12.2 Create `frontend/src/hooks/useWebSocket.ts`
+  - Auto-reconnect with 3s interval
+  - Ping/pong keepalive every 30s
+  - Session subscription management
+  - Callbacks for output, status, error events
+- [x] 12.3 Update `ConversationView.tsx`
+  - Added OutputPanel component for console output display
+  - Stderr shown in red, stdout in gray
+  - Auto-scroll to latest output
+  - Added Cancel button in header when running
+- [x] 12.4 Update `MainPanel.tsx`
+  - Added props for outputLines and onCancel
+  - Forward to ConversationView
+- [x] 12.5 Update `Index.tsx`
+  - Integrated useWebSocket hook
+  - Output state per-session via Map
+  - Auto-subscribe when viewing a session
+  - Cancel handler via WebSocket
+  - Query invalidation on status updates
+
+### Files Added/Modified
+- `frontend/src/api/types.ts` - Added WebSocket message types
+- `frontend/src/hooks/useWebSocket.ts` (new) - WebSocket hook with reconnect
+- `frontend/src/components/ralphtown/ConversationView.tsx` - OutputPanel, Cancel button
+- `frontend/src/components/ralphtown/MainPanel.tsx` - Pass-through props
+- `frontend/src/pages/Index.tsx` - WebSocket integration
+
+### Verification
+- Frontend build: ✅ PASS
+- Frontend tests: ✅ PASS (1 test)
+- Backend tests: ✅ PASS (58 tests)
 
 ---
 

@@ -1,13 +1,16 @@
 import { useState, useRef, useEffect } from "react";
-import { ArrowUp, GitBranch, Loader2, Check, AlertCircle, Clock, ExternalLink } from "lucide-react";
+import { ArrowUp, GitBranch, Loader2, Check, AlertCircle, Clock, ExternalLink, Square, Terminal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { RalphtownInstance, ChatMessage } from "@/types/ralphtown";
 import { cn } from "@/lib/utils";
+import type { OutputLine } from "@/hooks/useWebSocket";
 
 interface ConversationViewProps {
   instance: RalphtownInstance;
   onSendMessage: (instanceId: string, message: string) => void;
+  outputLines?: OutputLine[];
+  onCancel?: (instanceId: string) => void;
 }
 
 const statusConfig = {
@@ -41,11 +44,47 @@ function ChatMessageBubble({ message }: { message: ChatMessage }) {
   );
 }
 
-export function ConversationView({ instance, onSendMessage }: ConversationViewProps) {
+function OutputPanel({ lines }: { lines: OutputLine[] }) {
+  const outputEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    outputEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [lines]);
+
+  if (lines.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="border border-border rounded-lg bg-zinc-950 overflow-hidden">
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-border bg-zinc-900">
+        <Terminal className="h-4 w-4 text-muted-foreground" />
+        <span className="text-xs font-medium text-muted-foreground">Console Output</span>
+      </div>
+      <div className="max-h-64 overflow-y-auto p-3 font-mono text-xs">
+        {lines.map((line, index) => (
+          <div
+            key={index}
+            className={cn(
+              "whitespace-pre-wrap break-all",
+              line.stream === "stderr" ? "text-red-400" : "text-zinc-300"
+            )}
+          >
+            {line.content}
+          </div>
+        ))}
+        <div ref={outputEndRef} />
+      </div>
+    </div>
+  );
+}
+
+export function ConversationView({ instance, onSendMessage, outputLines = [], onCancel }: ConversationViewProps) {
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const StatusIcon = statusConfig[instance.status].icon;
+  const isRunning = instance.status === "running";
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -62,6 +101,10 @@ export function ConversationView({ instance, onSendMessage }: ConversationViewPr
     if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
       handleSubmit();
     }
+  };
+
+  const handleCancel = () => {
+    onCancel?.(instance.id);
   };
 
   return (
@@ -81,6 +124,17 @@ export function ConversationView({ instance, onSendMessage }: ConversationViewPr
               <span>{instance.model}</span>
             </div>
           </div>
+          {isRunning && onCancel && (
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={handleCancel}
+              className="flex items-center gap-1.5"
+            >
+              <Square className="h-3.5 w-3.5" />
+              Cancel
+            </Button>
+          )}
           <a
             href={`https://github.com/${instance.repo}`}
             target="_blank"
@@ -93,12 +147,13 @@ export function ConversationView({ instance, onSendMessage }: ConversationViewPr
         </div>
       </div>
 
-      {/* Messages */}
+      {/* Messages and Output */}
       <div className="flex-1 overflow-y-auto px-6 py-4">
         <div className="max-w-3xl mx-auto space-y-4">
           {instance.messages.map((message) => (
             <ChatMessageBubble key={message.id} message={message} />
           ))}
+          {outputLines.length > 0 && <OutputPanel lines={outputLines} />}
           <div ref={messagesEndRef} />
         </div>
       </div>

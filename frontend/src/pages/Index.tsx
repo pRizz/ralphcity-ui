@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { AgentSidebar } from "@/components/ralphtown/AgentSidebar";
 import { MainPanel } from "@/components/ralphtown/MainPanel";
 import {
@@ -8,6 +8,7 @@ import {
   mapApiSessionToInstance,
 } from "@/types/ralphtown";
 import { useToast } from "@/hooks/use-toast";
+import { useWebSocket, OutputLine } from "@/hooks/useWebSocket";
 import {
   useSessions,
   useSession,
@@ -15,11 +16,14 @@ import {
   useCreateSession,
   useRunSession,
 } from "@/api/hooks";
-import type { Repo } from "@/api/types";
+import { useQueryClient } from "@tanstack/react-query";
+import type { Repo, SessionStatus } from "@/api/types";
 
 const Index = () => {
   const [activeInstanceId, setActiveInstanceId] = useState<string | null>(null);
+  const [outputLines, setOutputLines] = useState<Map<string, OutputLine[]>>(new Map());
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // Fetch sessions and repos from API
   const { data: sessions = [], isLoading: sessionsLoading } = useSessions();
@@ -29,6 +33,65 @@ const Index = () => {
   // Mutations
   const createSession = useCreateSession();
   const runSession = useRunSession();
+
+  // WebSocket callbacks
+  const handleWsOutput = useCallback((sessionId: string, line: OutputLine) => {
+    setOutputLines((prev) => {
+      const newMap = new Map(prev);
+      const lines = newMap.get(sessionId) || [];
+      newMap.set(sessionId, [...lines, line]);
+      return newMap;
+    });
+  }, []);
+
+  const handleWsStatus = useCallback(
+    (sessionId: string, status: SessionStatus) => {
+      // Invalidate queries to refetch session data
+      queryClient.invalidateQueries({ queryKey: ["sessions"] });
+      queryClient.invalidateQueries({ queryKey: ["session", sessionId] });
+
+      // Clear output when session completes or errors
+      if (status === "completed" || status === "error" || status === "cancelled") {
+        // Optionally clear output after a delay to let user see final output
+        setTimeout(() => {
+          setOutputLines((prev) => {
+            const newMap = new Map(prev);
+            newMap.delete(sessionId);
+            return newMap;
+          });
+        }, 5000);
+      }
+    },
+    [queryClient]
+  );
+
+  const handleWsError = useCallback(
+    (message: string) => {
+      toast({
+        title: "WebSocket Error",
+        description: message,
+        variant: "destructive",
+      });
+    },
+    [toast]
+  );
+
+  // WebSocket hook
+  const { isConnected, subscribe, unsubscribe, cancel } = useWebSocket({
+    onOutput: handleWsOutput,
+    onStatus: handleWsStatus,
+    onError: handleWsError,
+  });
+
+  // Subscribe to active session's output
+  useEffect(() => {
+    if (activeInstanceId) {
+      subscribe(activeInstanceId);
+      return () => {
+        unsubscribe(activeInstanceId);
+      };
+    }
+  }, [activeInstanceId, subscribe, unsubscribe]);
 
   // Create a map of repos for quick lookup
   const repoMap = useMemo(() => {
@@ -92,13 +155,33 @@ const Index = () => {
   };
 
   const handleSendMessage = (instanceId: string, content: string) => {
-    // For now, follow-up messages just run ralph again
-    // TODO: Implement proper message handling through WebSocket
+    // Clear previous output for this session
+    setOutputLines((prev) => {
+      const newMap = new Map(prev);
+      newMap.delete(instanceId);
+      return newMap;
+    });
+
+    // Run ralph with the new message
     runSession.mutate({
       id: instanceId,
       req: { prompt: content },
     });
   };
+
+  const handleCancel = useCallback(
+    (instanceId: string) => {
+      cancel(instanceId);
+      toast({
+        title: "Cancelling session",
+        description: "Sending cancel signal...",
+      });
+    },
+    [cancel, toast]
+  );
+
+  // Get output lines for active session
+  const activeOutputLines = activeInstanceId ? outputLines.get(activeInstanceId) || [] : [];
 
   const isLoading = sessionsLoading || reposLoading;
 
@@ -122,7 +205,9 @@ const Index = () => {
         activeInstance={activeInstance}
         onStartSession={handleStartSession}
         onSendMessage={handleSendMessage}
+        onCancel={handleCancel}
         repos={repos}
+        outputLines={activeOutputLines}
       />
     </div>
   );

@@ -6,15 +6,18 @@ import { PromptInput } from "./PromptInput";
 import { ConversationView } from "./ConversationView";
 import { RalphtownInstance, Repository, mapApiRepoToRepository } from "@/types/ralphtown";
 import type { Repo } from "@/api/types";
+import type { OutputLine } from "@/hooks/useWebSocket";
 
 interface MainPanelProps {
   activeInstance: RalphtownInstance | null;
   onStartSession: (prompt: string, repo: Repository, branch: string, model: string) => void;
   onSendMessage: (instanceId: string, message: string) => void;
+  onCancel?: (instanceId: string) => void;
   repos: Repo[];
+  outputLines?: OutputLine[];
 }
 
-export function MainPanel({ activeInstance, onStartSession, onSendMessage, repos }: MainPanelProps) {
+export function MainPanel({ activeInstance, onStartSession, onSendMessage, onCancel, repos, outputLines = [] }: MainPanelProps) {
   // Convert API repos to UI repositories
   const repositories = useMemo(() => {
     return repos.map((repo) => mapApiRepoToRepository(repo));
@@ -62,7 +65,12 @@ export function MainPanel({ activeInstance, onStartSession, onSendMessage, repos
 
       {/* Main Content */}
       {activeInstance ? (
-        <ConversationView instance={activeInstance} onSendMessage={onSendMessage} />
+        <ConversationView
+          instance={activeInstance}
+          onSendMessage={onSendMessage}
+          onCancel={onCancel}
+          outputLines={outputLines}
+        />
       ) : (
         <main className="flex-1 flex flex-col items-center justify-center px-6">
           <div className="w-full max-w-2xl flex flex-col items-center gap-6">
