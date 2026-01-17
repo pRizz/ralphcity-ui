@@ -61,15 +61,16 @@ export function useCloneProgress(
       };
 
       // Handle complete event
-      eventSource.addEventListener("complete", (event) => {
+      eventSource.addEventListener("complete", async (event) => {
         try {
           const messageEvent = event as MessageEvent;
           const data = JSON.parse(messageEvent.data) as {
             repo: Repo;
             message: string;
           };
-          // Invalidate repos query to refresh the list
-          queryClient.invalidateQueries({ queryKey: queryKeys.repos });
+          // Invalidate repos query and wait for refetch before calling onComplete
+          // This prevents a race where selectedRepo is set before the repos list updates
+          await queryClient.invalidateQueries({ queryKey: queryKeys.repos });
           onCompleteRef.current(data.repo, data.message);
           eventSource.close();
           eventSourceRef.current = null;
@@ -152,7 +153,8 @@ export function useCloneProgress(
                 if (data.type === "progress") {
                   onProgressRef.current(data.data);
                 } else if (data.type === "complete") {
-                  queryClient.invalidateQueries({ queryKey: queryKeys.repos });
+                  // Wait for repos to refetch before calling onComplete
+                  await queryClient.invalidateQueries({ queryKey: queryKeys.repos });
                   onCompleteRef.current(data.data.repo, data.data.message);
                   return;
                 } else if (data.type === "error") {
