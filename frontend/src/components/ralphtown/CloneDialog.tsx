@@ -10,9 +10,10 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useCloneRepo } from "@/api/hooks";
+import { Progress } from "@/components/ui/progress";
+import { useCloneProgress } from "@/hooks/useCloneProgress";
 import { useToast } from "@/hooks/use-toast";
-import type { Repo } from "@/api/types";
+import type { Repo, CloneProgress } from "@/api/types";
 
 interface CloneDialogProps {
   open: boolean;
@@ -20,12 +21,43 @@ interface CloneDialogProps {
   onCloneSuccess: (repo: Repo) => void;
 }
 
+const formatBytes = (bytes: number): string => {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+};
+
 export function CloneDialog({ open, onOpenChange, onCloneSuccess }: CloneDialogProps) {
   const [gitUrl, setGitUrl] = useState("");
-  const cloneRepo = useCloneRepo();
+  const [cloneProgress, setCloneProgress] = useState<CloneProgress | null>(null);
+  const [isCloning, setIsCloning] = useState(false);
   const { toast } = useToast();
 
-  const handleClone = async () => {
+  const { startClone, cancel } = useCloneProgress({
+    onProgress: setCloneProgress,
+    onComplete: (repo, message) => {
+      setIsCloning(false);
+      setCloneProgress(null);
+      onCloneSuccess(repo);
+      setGitUrl("");
+      onOpenChange(false);
+      toast({
+        title: "Repository cloned",
+        description: message,
+      });
+    },
+    onError: (message) => {
+      setIsCloning(false);
+      setCloneProgress(null);
+      toast({
+        title: "Failed to clone repository",
+        description: message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleClone = () => {
     const trimmedUrl = gitUrl.trim();
     if (!trimmedUrl) {
       toast({
@@ -36,29 +68,44 @@ export function CloneDialog({ open, onOpenChange, onCloneSuccess }: CloneDialogP
       return;
     }
 
-    try {
-      const response = await cloneRepo.mutateAsync({ url: trimmedUrl });
-      onCloneSuccess(response.repo);
-      setGitUrl("");
-      onOpenChange(false);
-      toast({
-        title: "Repository cloned",
-        description: response.message,
-      });
-    } catch (error) {
-      toast({
-        title: "Failed to clone repository",
-        description: error instanceof Error ? error.message : "Unknown error",
-        variant: "destructive",
-      });
-    }
+    setIsCloning(true);
+    startClone(trimmedUrl);
   };
 
   const handleOpenChange = (newOpen: boolean) => {
+    if (!newOpen && isCloning) {
+      cancel();
+      setIsCloning(false);
+      setCloneProgress(null);
+    }
     onOpenChange(newOpen);
     if (!newOpen) {
       setGitUrl("");
     }
+  };
+
+  // Calculate progress percentage
+  const getProgressPercentage = (): number => {
+    if (!cloneProgress || cloneProgress.total_objects === 0) return 0;
+    return Math.round(
+      (cloneProgress.received_objects / cloneProgress.total_objects) * 100
+    );
+  };
+
+  // Determine current phase and text
+  const getProgressText = (): string => {
+    if (!cloneProgress) return "";
+
+    const { received_objects, total_objects, received_bytes, indexed_deltas, total_deltas } =
+      cloneProgress;
+
+    // Indexing phase: download complete, now indexing deltas
+    if (received_objects === total_objects && total_deltas > 0 && indexed_deltas < total_deltas) {
+      return `Indexing: ${indexed_deltas} / ${total_deltas} deltas`;
+    }
+
+    // Download phase
+    return `Downloading: ${received_objects} / ${total_objects} objects (${formatBytes(received_bytes)})`;
   };
 
   return (
@@ -81,8 +128,9 @@ export function CloneDialog({ open, onOpenChange, onCloneSuccess }: CloneDialogP
               onChange={(e) => setGitUrl(e.target.value)}
               placeholder="https://github.com/user/repo.git"
               className="col-span-3"
+              disabled={isCloning}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && !cloneRepo.isPending) {
+                if (e.key === "Enter" && !isCloning) {
                   handleClone();
                 }
               }}
@@ -91,17 +139,25 @@ export function CloneDialog({ open, onOpenChange, onCloneSuccess }: CloneDialogP
           <p className="text-xs text-muted-foreground ml-auto col-span-3 pr-1">
             Repository will be cloned to ~/ralphtown/
           </p>
+          {isCloning && (
+            <div className="space-y-2">
+              <Progress value={getProgressPercentage()} className="w-full" />
+              <p className="text-xs text-muted-foreground text-center">
+                {getProgressText()}
+              </p>
+            </div>
+          )}
         </div>
         <DialogFooter>
           <Button
             variant="outline"
             onClick={() => handleOpenChange(false)}
-            disabled={cloneRepo.isPending}
+            disabled={isCloning}
           >
             Cancel
           </Button>
-          <Button onClick={handleClone} disabled={cloneRepo.isPending}>
-            {cloneRepo.isPending ? "Cloning..." : "Clone"}
+          <Button onClick={handleClone} disabled={isCloning}>
+            {isCloning ? "Cloning..." : "Clone"}
           </Button>
         </DialogFooter>
       </DialogContent>
