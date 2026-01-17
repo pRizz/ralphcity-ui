@@ -58,7 +58,7 @@ export function mapApiSessionToInstance(
     branch: currentBranch || "main",
     status: session.status as AgentStatus,
     createdAt: new Date(session.created_at),
-    model: "Claude Code", // TODO: Store model in session
+    model: "Claude Code", // Hardcoded for now - could be stored in session config later
     messages: messages.map(mapApiMessageToChat),
   };
 }
