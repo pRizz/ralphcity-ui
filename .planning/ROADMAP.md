@@ -28,10 +28,10 @@ Decimal phases appear between their surrounding integers in numeric order.
   1. mockData.ts file no longer exists in codebase
   2. DB layer methods return Result types instead of panicking on errors
   3. API errors from DB layer surface as proper HTTP error responses
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 01-01: TBD
+- [ ] 01-01-PLAN.md — Delete mockData.ts and replace .unwrap() with proper error handling
 
 ### Phase 2: Core Clone
 **Goal**: Users can clone repositories from git URLs to the default location
@@ -96,7 +96,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Cleanup | 0/? | Not started | - |
+| 1. Cleanup | 0/1 | Not started | - |
 | 2. Core Clone | 0/? | Not started | - |
 | 3. Clone Progress | 0/? | Not started | - |
 | 4. Error Handling | 0/? | Not started | - |
