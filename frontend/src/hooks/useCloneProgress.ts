@@ -66,6 +66,8 @@ export function useCloneProgress(
       // Handle complete event
       eventSource.addEventListener("complete", async (event) => {
         receivedFinalEvent = true;
+        eventSource.close();
+        eventSourceRef.current = null;
         try {
           const messageEvent = event as MessageEvent;
           const data = JSON.parse(messageEvent.data) as {
@@ -76,10 +78,9 @@ export function useCloneProgress(
           // This prevents a race where selectedRepo is set before the repos list updates
           await queryClient.invalidateQueries({ queryKey: queryKeys.repos });
           onCompleteRef.current(data.repo, data.message);
-          eventSource.close();
-          eventSourceRef.current = null;
         } catch (e) {
-          console.error("Failed to parse complete message:", e);
+          console.error("Failed to handle complete message:", e);
+          onErrorRef.current(`Clone completed but failed to update UI: ${e}`);
         }
       });
 
