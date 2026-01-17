@@ -1,6 +1,11 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -11,8 +16,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useCloneProgress } from "@/hooks/useCloneProgress";
 import { useToast } from "@/hooks/use-toast";
+import { ChevronDown, Info } from "lucide-react";
 import type { Repo, CloneProgress, AuthType, CredentialRequest } from "@/api/types";
 
 interface CloneDialogProps {
@@ -225,7 +236,17 @@ export function CloneDialog({ open, onOpenChange, onCloneSuccess }: CloneDialogP
 
               {credentialMode === "github_pat" && (
                 <div className="space-y-2">
-                  <Label htmlFor="pat">GitHub Personal Access Token</Label>
+                  <div className="flex items-center gap-1">
+                    <Label htmlFor="pat">GitHub Personal Access Token</Label>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="text-xs">Used only for this clone, not stored</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
                   <Input
                     id="pat"
                     type="password"
@@ -252,7 +273,17 @@ export function CloneDialog({ open, onOpenChange, onCloneSuccess }: CloneDialogP
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
+                    <div className="flex items-center gap-1">
+                      <Label htmlFor="password">Password</Label>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="text-xs">Used only for this clone, not stored</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
                     <Input
                       id="password"
                       type="password"
@@ -269,7 +300,17 @@ export function CloneDialog({ open, onOpenChange, onCloneSuccess }: CloneDialogP
 
               {credentialMode === "ssh" && (
                 <div className="space-y-2">
-                  <Label htmlFor="passphrase">SSH Key Passphrase</Label>
+                  <div className="flex items-center gap-1">
+                    <Label htmlFor="passphrase">SSH Key Passphrase</Label>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="text-xs">Used only for this clone, not stored</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
                   <Input
                     id="passphrase"
                     type="password"
@@ -284,6 +325,22 @@ export function CloneDialog({ open, onOpenChange, onCloneSuccess }: CloneDialogP
                 </div>
               )}
 
+              <Collapsible className="mt-2">
+                <CollapsibleTrigger className="flex items-center text-xs text-muted-foreground hover:text-foreground">
+                  <ChevronDown className="h-3 w-3 mr-1" />
+                  How are my credentials used?
+                </CollapsibleTrigger>
+                <CollapsibleContent className="text-xs text-muted-foreground mt-2 space-y-1">
+                  <p>Your credentials are:</p>
+                  <ul className="list-disc list-inside ml-2">
+                    <li>Sent directly to the git server for authentication</li>
+                    <li>Used only for this single clone operation</li>
+                    <li>Never stored on disk or in any database</li>
+                    <li>Discarded immediately after the clone completes</li>
+                  </ul>
+                </CollapsibleContent>
+              </Collapsible>
+
               <Button
                 onClick={handleRetryWithCredentials}
                 disabled={isCloning || !hasValidCredentials()}
@@ -291,6 +348,45 @@ export function CloneDialog({ open, onOpenChange, onCloneSuccess }: CloneDialogP
               >
                 {isCloning ? "Cloning..." : "Retry with Credentials"}
               </Button>
+
+              <div className="mt-4 pt-4 border-t">
+                <p className="text-xs text-muted-foreground mb-2">
+                  Prefer to configure credentials via CLI?
+                </p>
+                <Collapsible>
+                  <CollapsibleTrigger className="text-xs text-primary hover:underline flex items-center">
+                    <ChevronDown className="h-3 w-3 mr-1" />
+                    Show CLI setup instructions
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="mt-2 text-xs bg-muted p-3 rounded font-mono">
+                    {credentialMode === "ssh" && (
+                      <>
+                        <p className="mb-2"># Add your SSH key to ssh-agent:</p>
+                        <p>ssh-add ~/.ssh/id_ed25519</p>
+                        <p className="mt-2 mb-2"># Or for RSA keys:</p>
+                        <p>ssh-add ~/.ssh/id_rsa</p>
+                      </>
+                    )}
+                    {credentialMode === "github_pat" && (
+                      <>
+                        <p className="mb-2"># Configure git credential helper:</p>
+                        <p>git config --global credential.helper store</p>
+                        <p className="mt-2 mb-2"># Then clone via command line:</p>
+                        <p className="break-all">git clone {gitUrl}</p>
+                        <p className="mt-1 text-muted-foreground"># Enter PAT as password when prompted</p>
+                      </>
+                    )}
+                    {credentialMode === "https_basic" && (
+                      <>
+                        <p className="mb-2"># Configure git credential helper:</p>
+                        <p>git config --global credential.helper store</p>
+                        <p className="mt-2 mb-2"># Then clone via command line:</p>
+                        <p className="break-all">git clone {gitUrl}</p>
+                      </>
+                    )}
+                  </CollapsibleContent>
+                </Collapsible>
+              </div>
             </div>
           )}
         </div>
