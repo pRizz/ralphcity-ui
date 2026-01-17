@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-01-17)
 ## Current Position
 
 Phase: 5 of 5 (Authentication)
-Plan: 0 of 2 in current phase
-Status: Planned, ready to execute
-Last activity: 2026-01-17 - Phase 5 planned (2 plans in 2 waves)
+Plan: 1 of 2 in current phase
+Status: In progress
+Last activity: 2026-01-17 - Completed 05-01-PLAN.md (Credential Callback Support)
 
-Progress: [########..] 80%
+Progress: [#########.] 90%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 7
-- Average duration: 3.3 min
-- Total execution time: 0.38 hours
+- Total plans completed: 8
+- Average duration: 3.4 min
+- Total execution time: 0.45 hours
 
 **By Phase:**
 
@@ -31,9 +31,10 @@ Progress: [########..] 80%
 | 02-core-clone | 2 | 5 min | 2.5 min |
 | 03-clone-progress | 2 | 5 min | 2.5 min |
 | 04-error-handling | 2 | 8 min | 4 min |
+| 05-authentication | 1 | 4 min | 4 min |
 
 **Recent Trend:**
-- Last 5 plans: 03-01 (4 min), 03-02 (1 min), 04-01 (6 min), 04-02 (2 min)
+- Last 5 plans: 03-02 (1 min), 04-01 (6 min), 04-02 (2 min), 05-01 (4 min)
 - Trend: Stable
 
 *Updated after each plan completion*
@@ -47,16 +48,16 @@ Recent decisions affecting current work:
 
 | Date | Decision | Rationale | Affects |
 |------|----------|-----------|---------|
+| 2026-01-17 | CredentialState with tried_* flags | Prevent infinite credential callback loops in git2 | Backend auth |
+| 2026-01-17 | SSH: agent first, then key file | Most common case is agent; fall back to key with passphrase | Backend auth |
+| 2026-01-17 | GitHub PAT uses x-access-token username | GitHub's documented PAT authentication convention | Backend auth |
+| 2026-01-17 | POST endpoint for credentials | Cleaner API: GET for no-creds, POST for credentials in body | API design |
+| 2026-01-17 | auth_type hints in error response | Frontend can show appropriate UI based on auth type | API/Frontend |
 | 2026-01-17 | errorInfo state for persistent error display | Keep error visible in dialog until retry/close | Frontend UI |
-| 2026-01-17 | help_steps as bulleted list | Scannable troubleshooting format | Frontend UI |
 | 2026-01-17 | Use git2::ErrorClass for SSH/HTTPS classification | Semantic classification more reliable than string parsing | Error handling |
 | 2026-01-17 | UserActionRequired returns 422 status | Same as UnprocessableEntity, user must take action | API responses |
-| 2026-01-17 | help_steps as Vec<String> with skip_serializing_if empty | Clean JSON when no help needed | API responses |
-| 2026-01-17 | validate_repo_path in git module | Centralized validation with actionable errors | Repo validation |
 | 2026-01-17 | Cancel EventSource when dialog closes during clone | Prevents orphaned connections | Frontend UI |
-| 2026-01-17 | Use EventSource API for SSE consumption | Native browser support, no deps needed | Frontend hooks |
 | 2026-01-17 | CloneEvent enum with tagged JSON variants | Frontend can easily parse event types | API/Frontend |
-| 2026-01-17 | Use try_send() for progress throttling | Drops updates if channel full, prevents backpressure blocking git | SSE progress |
 
 ### Pending Todos
 
@@ -68,6 +69,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-01-17
-Stopped at: Phase 5 planned, ready for execution
+Last session: 2026-01-17T20:15:51Z
+Stopped at: Completed 05-01-PLAN.md
 Resume file: None
