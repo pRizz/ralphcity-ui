@@ -26,13 +26,35 @@ export function MainPanel({ activeInstance, onStartSession, onSendMessage, onCan
   const [selectedRepo, setSelectedRepo] = useState<Repository | null>(null);
   const [selectedBranch, setSelectedBranch] = useState("main");
 
-  // Initialize selected repo when repos load
+  // Initialize or reconcile selected repo when repo list changes
   useEffect(() => {
-    if (repositories.length > 0 && !selectedRepo) {
+    if (repositories.length === 0) {
+      if (selectedRepo) {
+        setSelectedRepo(null);
+      }
+      return;
+    }
+
+    if (!selectedRepo) {
       setSelectedRepo(repositories[0]);
       setSelectedBranch(repositories[0].defaultBranch);
+      return;
     }
-  }, [repositories, selectedRepo]);
+
+    const matchedRepo = repositories.find((repo) => repo.id === selectedRepo.id);
+    if (!matchedRepo) {
+      setSelectedRepo(repositories[0]);
+      setSelectedBranch(repositories[0].defaultBranch);
+      return;
+    }
+
+    if (matchedRepo !== selectedRepo) {
+      setSelectedRepo(matchedRepo);
+      if (!matchedRepo.branches.includes(selectedBranch)) {
+        setSelectedBranch(matchedRepo.defaultBranch);
+      }
+    }
+  }, [repositories, selectedRepo, selectedBranch]);
 
   const handleSelectRepo = (repo: Repository) => {
     setSelectedRepo(repo);
