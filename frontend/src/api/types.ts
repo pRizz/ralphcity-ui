@@ -29,6 +29,15 @@ export interface ScanResponse {
   found: FoundRepo[];
 }
 
+export interface CloneRepoRequest {
+  url: string;
+}
+
+export interface CloneRepoResponse {
+  repo: Repo;
+  message: string;
+}
+
 // --- Sessions ---
 
 export type SessionStatus = "idle" | "running" | "completed" | "error" | "cancelled";

@@ -5,6 +5,8 @@ import type {
   AddRepoRequest,
   ScanRequest,
   ScanResponse,
+  CloneRepoRequest,
+  CloneRepoResponse,
   Session,
   SessionDetails,
   CreateSessionRequest,
@@ -86,6 +88,13 @@ export async function deleteRepo(id: string): Promise<void> {
 
 export async function scanRepos(req: ScanRequest): Promise<ScanResponse> {
   return request<ScanResponse>("/repos/scan", {
+    method: "POST",
+    body: JSON.stringify(req),
+  });
+}
+
+export async function cloneRepo(req: CloneRepoRequest): Promise<CloneRepoResponse> {
+  return request<CloneRepoResponse>("/repos/clone", {
     method: "POST",
     body: JSON.stringify(req),
   });

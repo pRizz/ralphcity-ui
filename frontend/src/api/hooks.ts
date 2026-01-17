@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import * as api from "./client";
 import type {
   AddRepoRequest,
+  CloneRepoRequest,
   CreateSessionRequest,
   RunSessionRequest,
   CommitRequest,
@@ -61,6 +62,16 @@ export function useDeleteRepo() {
 export function useScanRepos() {
   return useMutation({
     mutationFn: api.scanRepos,
+  });
+}
+
+export function useCloneRepo() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (req: CloneRepoRequest) => api.cloneRepo(req),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.repos });
+    },
   });
 }
 
