@@ -8,7 +8,7 @@
 - [x] Step 2: Backend scaffold with Axum
 - [x] Step 3: Database layer with SQLite
 - [x] Step 4: Repository management API
-- [ ] Step 5: Session management API
+- [x] Step 5: Session management API
 - [ ] Step 6: WebSocket infrastructure
 - [ ] Step 7: Ralph process spawning
 - [ ] Step 8: Output streaming to WebSocket
@@ -161,15 +161,39 @@ ralphtown/
 
 ---
 
-## Next: Step 5 - Session Management API
+## Step 5 - COMPLETED
+
+### Changes Made
+- [x] Created `backend/src/api/sessions.rs` - Session management endpoints
+- [x] `POST /api/sessions` - Create session for a repo (validates repo exists)
+- [x] `GET /api/sessions` - List all sessions
+- [x] `GET /api/sessions/{id}` - Get session details with messages (SessionDetails response)
+- [x] `DELETE /api/sessions/{id}` - Delete session
+- [x] Added sessions module to `backend/src/api/mod.rs`
+- [x] Wired sessions router into `backend/src/main.rs`
+- [x] Added 7 integration tests covering all endpoints and edge cases
+
+### Files Added/Modified
+- `backend/src/api/sessions.rs` (new) - Session endpoints with tests
+- `backend/src/api/mod.rs` - Added sessions module export
+- `backend/src/main.rs` - Nested sessions router
+
+### Verification
+- Backend cargo test: ✅ PASS (22 tests - 6 db + 1 health + 8 repo API + 7 session API)
+- Frontend tests: ✅ PASS (1 test)
+
+---
+
+## Next: Step 6 - WebSocket Infrastructure
 
 Tasks:
-- [ ] Create `backend/src/api/sessions.rs` - Session endpoints
-- [ ] `POST /api/sessions` - Create session for a repo
-- [ ] `GET /api/sessions` - List all sessions
-- [ ] `GET /api/sessions/{id}` - Get session details with messages
-- [ ] `DELETE /api/sessions/{id}` - Delete session
-- [ ] Validate repo exists when creating session
+- [ ] Add WebSocket dependencies (tokio-tungstenite or axum built-in)
+- [ ] Create `backend/src/ws/mod.rs` - WebSocket handler
+- [ ] Create `backend/src/ws/messages.rs` - Message types (subscribe, unsubscribe, cancel, output, status, error)
+- [ ] Create `backend/src/ws/connections.rs` - Connection manager
+- [ ] Add WebSocket route: `GET /api/ws` → upgrade to WebSocket
+- [ ] Support subscribing to session output by session_id
+- [ ] Use tokio broadcast channels for pub/sub
 - [ ] Add integration tests
 
 ---

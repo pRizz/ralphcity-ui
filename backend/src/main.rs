@@ -32,6 +32,7 @@ pub fn create_app(state: AppState) -> Router {
     Router::new()
         .route("/api/health", get(health_check))
         .nest("/api", api::repos::router())
+        .nest("/api", api::sessions::router())
         .with_state(state)
         .layer(cors)
 }

@@ -1,4 +1,5 @@
 pub mod repos;
+pub mod sessions;
 
 use std::sync::Arc;
 

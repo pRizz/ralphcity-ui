@@ -1,0 +1,292 @@
+use axum::{
+    extract::{Path as AxumPath, State},
+    routing::get,
+    Json, Router,
+};
+use serde::{Deserialize, Serialize};
+use uuid::Uuid;
+
+use crate::db::models::{Message, Session};
+use crate::error::{AppError, AppResult};
+
+use super::AppState;
+
+/// Request body for creating a new session
+#[derive(Debug, Deserialize, Serialize)]
+pub struct CreateSessionRequest {
+    /// Repository ID to create session for
+    pub repo_id: Uuid,
+    /// Optional session name
+    pub name: Option<String>,
+}
+
+/// Response for session details including messages
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SessionDetails {
+    #[serde(flatten)]
+    pub session: Session,
+    pub messages: Vec<Message>,
+}
+
+/// List all sessions
+async fn list_sessions(State(state): State<AppState>) -> AppResult<Json<Vec<Session>>> {
+    let sessions = state
+        .db
+        .list_sessions()
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+
+    Ok(Json(sessions))
+}
+
+/// Create a new session
+async fn create_session(
+    State(state): State<AppState>,
+    Json(req): Json<CreateSessionRequest>,
+) -> AppResult<Json<Session>> {
+    // Verify repo exists
+    state.db.get_repo(req.repo_id).map_err(|e| match e {
+        crate::db::DbError::NotFound => {
+            AppError::BadRequest(format!("Repository not found: {}", req.repo_id))
+        }
+        _ => AppError::Internal(e.to_string()),
+    })?;
+
+    let session = state
+        .db
+        .insert_session(req.repo_id, req.name.as_deref())
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+
+    Ok(Json(session))
+}
+
+/// Get a session by ID with its messages
+async fn get_session(
+    State(state): State<AppState>,
+    AxumPath(id): AxumPath<Uuid>,
+) -> AppResult<Json<SessionDetails>> {
+    let session = state.db.get_session(id).map_err(|e| match e {
+        crate::db::DbError::NotFound => AppError::NotFound(format!("Session not found: {}", id)),
+        _ => AppError::Internal(e.to_string()),
+    })?;
+
+    let messages = state
+        .db
+        .list_messages(id)
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+
+    Ok(Json(SessionDetails { session, messages }))
+}
+
+/// Delete a session by ID
+async fn delete_session(
+    State(state): State<AppState>,
+    AxumPath(id): AxumPath<Uuid>,
+) -> AppResult<Json<()>> {
+    state.db.delete_session(id).map_err(|e| match e {
+        crate::db::DbError::NotFound => AppError::NotFound(format!("Session not found: {}", id)),
+        _ => AppError::Internal(e.to_string()),
+    })?;
+
+    Ok(Json(()))
+}
+
+/// Create the sessions router
+pub fn router() -> Router<AppState> {
+    Router::new()
+        .route("/sessions", get(list_sessions).post(create_session))
+        .route("/sessions/{id}", get(get_session).delete(delete_session))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::api::repos::{router as repos_router, AddRepoRequest};
+    use crate::db::models::Repo;
+    use crate::db::Database;
+    use axum_test::TestServer;
+    use tempfile::TempDir;
+
+    fn create_test_state() -> AppState {
+        let db = Database::in_memory().expect("Failed to create test database");
+        AppState::new(db)
+    }
+
+    fn create_test_server(state: AppState) -> TestServer {
+        let app = Router::new()
+            .merge(repos_router())
+            .merge(router())
+            .with_state(state);
+        TestServer::new(app).expect("Failed to create test server")
+    }
+
+    async fn create_test_repo(server: &TestServer) -> Repo {
+        let temp_dir = TempDir::new().expect("Failed to create temp dir");
+        git2::Repository::init(temp_dir.path()).expect("Failed to init git repo");
+
+        // Need to keep temp_dir alive, so we leak it for tests
+        let path = temp_dir.path().to_string_lossy().to_string();
+        std::mem::forget(temp_dir);
+
+        let response = server
+            .post("/repos")
+            .json(&AddRepoRequest {
+                path,
+                name: Some("test-repo".to_string()),
+            })
+            .await;
+
+        response.assert_status_ok();
+        response.json()
+    }
+
+    #[tokio::test]
+    async fn test_list_sessions_empty() {
+        let state = create_test_state();
+        let server = create_test_server(state);
+
+        let response = server.get("/sessions").await;
+        response.assert_status_ok();
+
+        let sessions: Vec<Session> = response.json();
+        assert!(sessions.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_create_session_validates_repo() {
+        let state = create_test_state();
+        let server = create_test_server(state);
+
+        let fake_repo_id = Uuid::new_v4();
+        let response = server
+            .post("/sessions")
+            .json(&CreateSessionRequest {
+                repo_id: fake_repo_id,
+                name: None,
+            })
+            .await;
+
+        response.assert_status_bad_request();
+    }
+
+    #[tokio::test]
+    async fn test_create_and_list_session() {
+        let state = create_test_state();
+        let server = create_test_server(state);
+
+        // Create a repo first
+        let repo = create_test_repo(&server).await;
+
+        // Create a session
+        let response = server
+            .post("/sessions")
+            .json(&CreateSessionRequest {
+                repo_id: repo.id,
+                name: Some("Test Session".to_string()),
+            })
+            .await;
+
+        response.assert_status_ok();
+        let session: Session = response.json();
+        assert_eq!(session.repo_id, repo.id);
+        assert_eq!(session.name, Some("Test Session".to_string()));
+        assert_eq!(session.status, crate::db::models::SessionStatus::Idle);
+
+        // List sessions
+        let response = server.get("/sessions").await;
+        response.assert_status_ok();
+        let sessions: Vec<Session> = response.json();
+        assert_eq!(sessions.len(), 1);
+        assert_eq!(sessions[0].name, Some("Test Session".to_string()));
+    }
+
+    #[tokio::test]
+    async fn test_get_session_with_messages() {
+        let state = create_test_state();
+        let server = create_test_server(state.clone());
+
+        // Create a repo and session
+        let repo = create_test_repo(&server).await;
+        let response = server
+            .post("/sessions")
+            .json(&CreateSessionRequest {
+                repo_id: repo.id,
+                name: None,
+            })
+            .await;
+        response.assert_status_ok();
+        let session: Session = response.json();
+
+        // Add some messages directly via db
+        state
+            .db
+            .insert_message(
+                session.id,
+                crate::db::models::MessageRole::User,
+                "Hello!",
+            )
+            .expect("Failed to insert message");
+        state
+            .db
+            .insert_message(
+                session.id,
+                crate::db::models::MessageRole::Assistant,
+                "Hi there!",
+            )
+            .expect("Failed to insert message");
+
+        // Get session details
+        let response = server.get(&format!("/sessions/{}", session.id)).await;
+        response.assert_status_ok();
+        let details: SessionDetails = response.json();
+        assert_eq!(details.session.id, session.id);
+        assert_eq!(details.messages.len(), 2);
+        assert_eq!(details.messages[0].content, "Hello!");
+        assert_eq!(details.messages[1].content, "Hi there!");
+    }
+
+    #[tokio::test]
+    async fn test_get_nonexistent_session() {
+        let state = create_test_state();
+        let server = create_test_server(state);
+
+        let fake_id = Uuid::new_v4();
+        let response = server.get(&format!("/sessions/{}", fake_id)).await;
+        response.assert_status_not_found();
+    }
+
+    #[tokio::test]
+    async fn test_delete_session() {
+        let state = create_test_state();
+        let server = create_test_server(state);
+
+        // Create a repo and session
+        let repo = create_test_repo(&server).await;
+        let response = server
+            .post("/sessions")
+            .json(&CreateSessionRequest {
+                repo_id: repo.id,
+                name: Some("To Delete".to_string()),
+            })
+            .await;
+        response.assert_status_ok();
+        let session: Session = response.json();
+
+        // Delete it
+        let response = server.delete(&format!("/sessions/{}", session.id)).await;
+        response.assert_status_ok();
+
+        // Verify it's gone
+        let response = server.get(&format!("/sessions/{}", session.id)).await;
+        response.assert_status_not_found();
+    }
+
+    #[tokio::test]
+    async fn test_delete_nonexistent_session() {
+        let state = create_test_state();
+        let server = create_test_server(state);
+
+        let fake_id = Uuid::new_v4();
+        let response = server.delete(&format!("/sessions/{}", fake_id)).await;
+        response.assert_status_not_found();
+    }
+}
