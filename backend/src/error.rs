@@ -25,6 +25,13 @@ pub enum AppError {
         field: Option<String>,
         value: Option<String>,
     },
+    /// User action required (422) - actionable errors with help steps
+    UserActionRequired {
+        code: String,
+        message: String,
+        details: Option<serde_json::Value>,
+        help_steps: Vec<String>,
+    },
 }
 
 /// Error response body
@@ -40,11 +47,13 @@ struct ErrorBody {
     message: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     details: Option<serde_json::Value>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    help_steps: Vec<String>,
 }
 
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
-        let (status, code, message, details) = match &self {
+        let (status, code, message, details, help_steps) = match &self {
             AppError::Internal(msg) => {
                 // Log unexpected internal errors
                 tracing::error!("Internal error: {}", msg);
@@ -53,13 +62,14 @@ impl IntoResponse for AppError {
                     "INTERNAL_ERROR",
                     msg.clone(),
                     None,
+                    Vec::new(),
                 )
             }
-            AppError::NotFound(msg) => (StatusCode::NOT_FOUND, "NOT_FOUND", msg.clone(), None),
+            AppError::NotFound(msg) => (StatusCode::NOT_FOUND, "NOT_FOUND", msg.clone(), None, Vec::new()),
             AppError::BadRequest(msg) => {
-                (StatusCode::BAD_REQUEST, "BAD_REQUEST", msg.clone(), None)
+                (StatusCode::BAD_REQUEST, "BAD_REQUEST", msg.clone(), None, Vec::new())
             }
-            AppError::Conflict(msg) => (StatusCode::CONFLICT, "CONFLICT", msg.clone(), None),
+            AppError::Conflict(msg) => (StatusCode::CONFLICT, "CONFLICT", msg.clone(), None, Vec::new()),
             AppError::UnprocessableEntity {
                 message,
                 field,
@@ -72,6 +82,19 @@ impl IntoResponse for AppError {
                     "field": field,
                     "value": value,
                 })),
+                Vec::new(),
+            ),
+            AppError::UserActionRequired {
+                code,
+                message,
+                details,
+                help_steps,
+            } => (
+                StatusCode::UNPROCESSABLE_ENTITY,
+                code.as_str(),
+                message.clone(),
+                details.clone(),
+                help_steps.clone(),
             ),
         };
 
@@ -80,6 +103,7 @@ impl IntoResponse for AppError {
                 code: code.to_string(),
                 message,
                 details,
+                help_steps,
             },
         });
 
@@ -96,6 +120,9 @@ impl std::fmt::Display for AppError {
             AppError::Conflict(msg) => write!(f, "Conflict: {}", msg),
             AppError::UnprocessableEntity { message, .. } => {
                 write!(f, "Unprocessable entity: {}", message)
+            }
+            AppError::UserActionRequired { code, message, .. } => {
+                write!(f, "User action required [{}]: {}", code, message)
             }
         }
     }

@@ -28,6 +28,56 @@ pub enum GitError {
 
 pub type GitResult<T> = Result<T, GitError>;
 
+/// Clone-specific errors with actionable help steps
+#[derive(Debug, Error)]
+pub enum CloneError {
+    #[error("SSH authentication failed: {message}")]
+    SshAuthFailed {
+        message: String,
+        help_steps: Vec<String>,
+    },
+
+    #[error("HTTPS authentication failed: {message}")]
+    HttpsAuthFailed {
+        message: String,
+        help_steps: Vec<String>,
+    },
+
+    #[error("Network error: {message}")]
+    NetworkError { message: String },
+
+    #[error("Clone operation failed: {message}")]
+    OperationFailed { message: String },
+}
+
+/// Classify a git2::Error into a CloneError with appropriate help steps
+pub fn classify_clone_error(err: git2::Error) -> CloneError {
+    match err.class() {
+        git2::ErrorClass::Ssh => CloneError::SshAuthFailed {
+            message: err.message().to_string(),
+            help_steps: vec![
+                "Ensure your SSH key is added to ssh-agent: ssh-add ~/.ssh/id_ed25519".to_string(),
+                "Verify your key is added to GitHub: ssh -T git@github.com".to_string(),
+                "If using a passphrase, the ssh-agent must have the key unlocked".to_string(),
+            ],
+        },
+        git2::ErrorClass::Http => CloneError::HttpsAuthFailed {
+            message: err.message().to_string(),
+            help_steps: vec![
+                "HTTPS cloning requires a Personal Access Token (PAT)".to_string(),
+                "Create a PAT at GitHub Settings > Developer Settings > Tokens".to_string(),
+                "Use the PAT as password when prompted, or configure git credential helper".to_string(),
+            ],
+        },
+        git2::ErrorClass::Net => CloneError::NetworkError {
+            message: err.message().to_string(),
+        },
+        _ => CloneError::OperationFailed {
+            message: err.message().to_string(),
+        },
+    }
+}
+
 /// File status in git working tree
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "lowercase")]
@@ -365,10 +415,10 @@ impl GitManager {
     ///
     /// This is a synchronous operation. Callers should use `tokio::task::spawn_blocking`
     /// to avoid blocking the async runtime.
-    pub fn clone(url: &str, dest: &Path) -> GitResult<git2::Repository> {
+    pub fn clone(url: &str, dest: &Path) -> Result<git2::Repository, CloneError> {
         git2::build::RepoBuilder::new()
             .clone(url, dest)
-            .map_err(|e| GitError::OperationFailed(format!("Clone failed: {}", e.message())))
+            .map_err(classify_clone_error)
     }
 
     /// Clone a repository with progress reporting
@@ -382,7 +432,7 @@ impl GitManager {
         url: &str,
         dest: &Path,
         progress_tx: mpsc::Sender<CloneProgress>,
-    ) -> GitResult<git2::Repository> {
+    ) -> Result<git2::Repository, CloneError> {
         let mut callbacks = git2::RemoteCallbacks::new();
 
         callbacks.transfer_progress(move |stats| {
@@ -406,7 +456,7 @@ impl GitManager {
         git2::build::RepoBuilder::new()
             .fetch_options(fetch_options)
             .clone(url, dest)
-            .map_err(|e| GitError::OperationFailed(format!("Clone failed: {}", e.message())))
+            .map_err(classify_clone_error)
     }
 
     // --- Write operations using CLI subprocess ---
@@ -720,6 +770,11 @@ mod tests {
         let clone_dest = dest_dir.path().join("cloned-repo");
 
         let result = GitManager::clone("not-a-valid-url", &clone_dest);
-        assert!(matches!(result, Err(GitError::OperationFailed(_))));
+        // Invalid URL returns either OperationFailed or NetworkError depending on how git2 classifies it
+        match result {
+            Err(CloneError::OperationFailed { .. }) | Err(CloneError::NetworkError { .. }) => {}
+            Err(other) => panic!("Unexpected error type: {:?}", other),
+            Ok(_) => panic!("Expected clone to fail for invalid URL"),
+        }
     }
 }

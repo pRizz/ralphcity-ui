@@ -122,7 +122,21 @@ impl RalphManager {
         }
 
         // Spawn the process
-        let mut child = cmd.spawn().map_err(|e| RalphError::SpawnFailed(e.to_string()))?;
+        let mut child = cmd.spawn().map_err(|e| {
+            if e.kind() == std::io::ErrorKind::NotFound {
+                RalphError::NotFound {
+                    message: "ralph CLI not found in PATH".to_string(),
+                    help_steps: vec![
+                        "Install ralph: cargo install ralph".to_string(),
+                        "Or download from release page".to_string(),
+                        "Ensure ~/.cargo/bin is in your PATH".to_string(),
+                        "Restart your terminal after installation".to_string(),
+                    ],
+                }
+            } else {
+                RalphError::SpawnFailed(e.to_string())
+            }
+        })?;
 
         // Take stdout and stderr handles
         let stdout = child.stdout.take().expect("stdout was configured");
@@ -394,6 +408,12 @@ pub enum RalphError {
 
     #[error("Session {0} has no running process")]
     NotRunning(Uuid),
+
+    #[error("ralph CLI not found: {message}")]
+    NotFound {
+        message: String,
+        help_steps: Vec<String>,
+    },
 }
 
 #[cfg(test)]

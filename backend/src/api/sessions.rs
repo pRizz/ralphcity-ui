@@ -167,6 +167,12 @@ async fn run_session(
                 session_id
             )),
             RalphError::SpawnFailed(msg) => AppError::Internal(format!("Failed to start ralph: {}", msg)),
+            RalphError::NotFound { message, help_steps } => AppError::UserActionRequired {
+                code: "RALPH_NOT_FOUND".to_string(),
+                message,
+                details: None,
+                help_steps,
+            },
             RalphError::NotRunning(_) => unreachable!(),
         })?;
 
